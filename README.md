@@ -19,7 +19,7 @@ Make sure you are using the latest [PyMongo](https://github.com/mongodb/mongo-py
 pip install -U 'pymongo[srv]'
 ```
 
-[Here]() you can find a Github Action template, please make sure to make a copy of it for your branch and change the name of the branch in the yaml file, on which the action should be executed.
+[Here](.github/workflows/gh-action-template.yml) you can find a Github Action template, please make sure to make a copy of it for your branch and change the name of the branch in the yaml file, on which the action should be executed.
 
 
 #### Usage
