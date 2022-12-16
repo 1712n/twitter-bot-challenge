@@ -4,9 +4,12 @@
 
 #### Description
 
-For this challenge you have a bearer token for Twitter Developer Account and credentials to access MongoDB Cluster. 
+For this challenge you have a Authentication Tokens (Access Token and Secret) and Consumer Keys (API Key and Secret), 
+so you can only use [OAuth 1.0a](https://developer.twitter.com/en/docs/authentication/oauth-1-0a) for authentication.
 
-The bearer token is stored in an environment variable `TW_BEARER_TOKEN`.
+Authentication Tokens are stored in `TW_ACCESS_TOKEN` and `TW_ACCESS_TOKEN_SECRET` respectivelly.
+
+Consumer Keys are stored in `TW_CONSUMER_KEY` and `TW_CONSUMER_KEY_SECRET` respectively.
 
 The MongoDB credentials are stored in `MONGODB_USER` and `MONGODB_PASSWORD`, also the cluster's address is stored in `MONGO_DB_ADDRESS`.
 
@@ -16,7 +19,29 @@ Make sure you are using the latest [PyMongo](https://github.com/mongodb/mongo-py
 pip install -U 'pymongo[srv]'
 ```
 
+You can find a Github Action template [here](.github/workflows/gh-action-template.yml), please make sure to you copy it to your branch and change the name of the branch in the yaml file. This will help the action's execution. 
+
+
 #### Usage
+
+To pass Github Secrets to your action, you need to specify the secrets and their corresponding names like following:
+
+```yaml
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Run Python Code
+        env:
+          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          TW_BEARER_TOKEN: ${{ secrets.TW_BEARER_TOKEN }}
+        run: |
+            python3 main.py
+```
+
+
 
 You can access environment variables in Python like that:
 
