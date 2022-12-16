@@ -19,12 +19,12 @@ Make sure you are using the latest [PyMongo](https://github.com/mongodb/mongo-py
 pip install -U 'pymongo[srv]'
 ```
 
-[Here](.github/workflows/gh-action-template.yml) you can find a Github Action template, please make sure to make a copy of it for your branch and change the name of the branch in the yaml file, on which the action should be executed.
+You can find a Github Action template [here](.github/workflows/gh-action-template.yml), please make sure to you copy it to your branch and change the name of the branch in the yaml file. This will help the action's execution. 
 
 
 #### Usage
 
-To pass Github Secrets to your action, you need to specify the secrets and their respective names like following:
+To pass Github Secrets to your action, you need to specify the secrets and their corresponding names like following:
 
 ```yaml
 jobs:
