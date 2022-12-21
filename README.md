@@ -1,5 +1,10 @@
 # Twitter Bot Challenge
 
+## To start
+
+**Send your resume and a link to this challenge to [challenge-submission@blockshop.org](mailto:challenge-submission@blockshop.org). Then we'll add you to collaborators and share all necessary credentials.**
+
+
 ### Github Secrets for Actions
 
 #### Description
