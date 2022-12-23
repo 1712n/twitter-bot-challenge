@@ -166,6 +166,8 @@ if __name__ == "__main__":
 
     ohlcv_db = client.ohlcv_db
     posts_db = client.posts_db
+    print(ohlcv_db.list_collection_names())
+    print(posts_db.list_collection_names())
 
     oauth = OAuth(
         consumer_key=consumer_key,
