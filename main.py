@@ -1,3 +1,4 @@
+import json
 import logging
 import os
 from datetime import datetime
@@ -16,11 +17,11 @@ def sort_by_oldest_timestamp(posts):
     return [post["pair"] for post in sorted_posts]
 
 
-def select_biggest_market(pairs):
+def select_biggest_market(ohlcv_db, pairs):
     """
     Function to select the biggest market among a list of pairs
     """
-    compound_volumes = ohlcv_db.find({"pair": {"$in": pairs}}, {"volume": 1})
+    compound_volumes = ohlcv_db.find({"pair": {"$in": pairs}}, {"pair": 1, "volume": 1})
     biggest_market_pair = max(compound_volumes, key=lambda x: x["volume"])
     return biggest_market_pair["pair"]
 
@@ -29,7 +30,7 @@ def compose_message(ohlcv_db, pair):
     """
     Function to compose the message to be posted for a given pair
     """
-    market_values = ohlcv_db.find({pair: pair}, {"market": 1, "volume": 1})
+    market_values = ohlcv_db.find({"pair": pair}, {"market": 1, "volume": 1})
     message = "Top Market Venues for {}:\n".format(pair)
     total_volume = 0
     for value in market_values:
@@ -45,7 +46,7 @@ def get_thread_id(posts_db, pair):
     """
     Function to get the thread ID for the tweets of a given pair
     """
-    thread = posts_db.find_one({pair: pair}, {"thread_id": 1})
+    thread = posts_db.find_one({"pair": pair}, {"thread_id": 1})
     return thread["thread_id"]
 
 
@@ -71,16 +72,13 @@ def compose_tweet(ohlcv_db, posts_db):
     """
     try:
         top_100_pairs = ohlcv_db.find().sort("volume", pymongo.DESCENDING).limit(100)
+        top_100_pairs = [post["pair"] for post in top_100_pairs]
     except pymongo.errors.PyMongoError as e:
         logging.error("Error querying OHLCV database: %s", e)
         return
 
     try:
-        latest_posts = (
-            posts_db.find({"pair": {"$in": top_100_pairs}})
-            .sort("timestamp", pymongo.ASCENDING)
-            .limit(100)
-        )
+        latest_posts = list(posts_db.find({"pair": {"$in": top_100_pairs}}))
     except pymongo.errors.PyMongoError as e:
         logging.error("Error querying posts database: %s", e)
         return
@@ -92,7 +90,7 @@ def compose_tweet(ohlcv_db, posts_db):
         return
 
     try:
-        pair_to_post = select_biggest_market(pairs_to_post)
+        pair_to_post = select_biggest_market(ohlcv_db, pairs_to_post)
     except pymongo.errors.PyMongoError as e:
         logging.error("Error selecting posts: %s", e)
         return
@@ -111,7 +109,7 @@ def post_tweet(ohlcv_db, posts_db):
         logging.error("Error during compose message: %s", e)
         return
     try:
-        count_tweet = posts_db.find({"pair": pair_to_post}).count()
+        count_tweet = len(list(posts_db.find({"pair": pair_to_post})))
     except pymongo.errors.PyMongoError as e:
         logging.error("Error counting posts: %s", e)
         return
@@ -119,25 +117,29 @@ def post_tweet(ohlcv_db, posts_db):
     if count_tweet > 0:
         try:
             thread_id = get_thread_id(posts_db, pair_to_post)
-            post_tweet_to_thread(message_to_post, thread_id)
+            new_post = post_tweet_to_thread(message_to_post, thread_id)
         except pymongo.errors.PyMongoError as e:
             logging.error("Error finding thread: %s", e)
             return
         except TwitterError as e:
             logging.error("Error creating tweet in thread: %s", e)
+            return
 
     else:
         try:
-            post_new_tweet(message_to_post)
+            new_post = post_new_tweet(message_to_post)
         except TwitterError as e:
             logging.error("Error creating tweet in thread: %s", e)
+            return
 
     try:
+        thread_id = json.loads(new_post)
         posts_db.insert_one(
             {
                 "pair": pair_to_post,
                 "message": message_to_post,
                 "timestamp": datetime.now(),
+                "thread_id": thread_id["id"],
             }
         )
     except pymongo.errors.PyMongoError as e:
@@ -145,9 +147,10 @@ def post_tweet(ohlcv_db, posts_db):
 
 
 if __name__ == "__main__":
-    log_format = "%(asctime)s::%(levelname)s::%(name)s::" \
-                 "%(filename)s::%(lineno)d::%(message)s"
-    logging.basicConfig(level='DEBUG', format=log_format)
+    log_format = (
+        "%(asctime)s::%(levelname)s::%(name)s::" "%(filename)s::%(lineno)d::%(message)s"
+    )
+    logging.basicConfig(level="DEBUG", format=log_format)
 
     load_dotenv()
     user = os.environ["MONGODB_USER"]
