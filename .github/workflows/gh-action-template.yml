@@ -30,4 +30,5 @@ jobs:
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
           MONGODB_USER: ${{ secrets.MONGODB_USER }}
         run: |
+          python tests.py
           python main.py
