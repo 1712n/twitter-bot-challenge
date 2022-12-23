@@ -7,6 +7,7 @@ from main import (
     compose_message,
     compose_tweet,
     get_thread_id,
+    get_database,
     select_biggest_market,
     sort_by_oldest_timestamp,
 )
@@ -15,8 +16,9 @@ from main import (
 class TestPostTweet(unittest.TestCase):
     def setUp(self):
         self.client = MongoClient()
-        self.ohlcv_db = self.client.test.ohlcv_db
-        self.posts_db = self.client.test.posts_db
+        self.database = get_database("test")
+        self.ohlcv_db = self.database.ohlcv_db
+        self.posts_db = self.database.posts_db
 
         data_ohlcv = [
             {"pair": "BTC-USDC", "market": "Binance", "volume": 30.10},
