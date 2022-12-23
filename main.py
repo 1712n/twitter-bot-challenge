@@ -145,20 +145,16 @@ def post_tweet(ohlcv_db, posts_db):
     except pymongo.errors.PyMongoError as e:
         logging.error("Error adding a post to db: %s", e)
 
-        
-def get_database():
+
+def get_database(name):
     load_dotenv()
     user = os.environ["MONGODB_USER"]
     password = os.environ["MONGODB_PASSWORD"]
     address = os.environ["MONGO_DB_ADDRESS"]
-    token = os.environ["TW_ACCESS_TOKEN"]
-    token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
-    consumer_key = os.environ["TW_CONSUMER_KEY"]
-    consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
 
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
-    return client["metrics"]
+    return client[name]
 
 
 if __name__ == "__main__":
@@ -166,14 +162,15 @@ if __name__ == "__main__":
         "%(asctime)s::%(levelname)s::%(name)s::" "%(filename)s::%(lineno)d::%(message)s"
     )
     logging.basicConfig(level="DEBUG", format=log_format)
-    
-    metrics = get_database()
-    print(metrics.list_collection_names())
+
 #     ohlcv_db = client.ohlcv_db
 #     posts_db = client.posts_db
 #     print(ohlcv_db.list_collection_names())
 #     print(posts_db.list_collection_names())
-
+#     token = os.environ["TW_ACCESS_TOKEN"]
+#     token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
+#     consumer_key = os.environ["TW_CONSUMER_KEY"]
+#     consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
 #     oauth = OAuth(
 #         consumer_key=consumer_key,
 #         consumer_secret=consumer_secret,
