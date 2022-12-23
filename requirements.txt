@@ -1,4 +1,6 @@
 certifi==2022.12.7
 dnspython==2.2.1
+isort==5.11.4
 pymongo==4.3.3
+python-dotenv==0.21.0
 twitter==1.19.6
