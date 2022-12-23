@@ -165,8 +165,8 @@ if __name__ == "__main__":
     client = pymongo.MongoClient(uri)
     with client.start_session(causal_consistency = True) as my_session:
         with my_session.start_transaction():
-            print(client.list_database_names())
-            print(client["metrics"].list_collection_names())
+            my_db = client["metrics"]
+            print(my_db.list_collection_names())
 #     ohlcv_db = client.ohlcv_db
 #     posts_db = client.posts_db
 #     print(ohlcv_db.list_collection_names())
