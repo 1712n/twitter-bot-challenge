@@ -2,7 +2,7 @@ name: Template CryptoCapBot Python application
 
 on:
   push:
-    branches: ["my-branch-name"] # TODO: rename
+    branches: ["develop"]
 
 jobs:
   build:
@@ -26,6 +26,8 @@ jobs:
           TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
           TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
           TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
-          # TODO: add more
+          MONGO_DB_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
+          MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
+          MONGODB_USER: ${{ secrets.MONGODB_USER }}
         run: |
           python main.py
