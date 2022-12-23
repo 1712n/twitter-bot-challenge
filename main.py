@@ -163,8 +163,9 @@ if __name__ == "__main__":
 
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
+    print("Server status {}".format(client.admin.command("serverStatus")))
     print(client.list_database_names())
-    print(client.metrics.list_collection_names())
+    print(client["metrics"].list_collection_names())
 #     ohlcv_db = client.ohlcv_db
 #     posts_db = client.posts_db
 #     print(ohlcv_db.list_collection_names())
