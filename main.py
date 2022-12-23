@@ -4,15 +4,8 @@ from datetime import datetime
 
 import pymongo
 import pymongo.errors
+from dotenv import load_dotenv
 from twitter import OAuth, Twitter, TwitterError
-
-user = os.environ["MONGODB_USER"]
-password = os.environ["MONGODB_PASSWORD"]
-address = os.environ["MONGO_DB_ADDRESS"]
-token = os.environ["TW_ACCESS_TOKEN"]
-token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
-consumer_key = os.environ["TW_CONSUMER_KEY"]
-consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
 
 
 def sort_by_oldest_timestamp(posts):
@@ -155,6 +148,14 @@ if __name__ == "__main__":
     log_format = "%(asctime)s::%(levelname)s::%(name)s::" \
                  "%(filename)s::%(lineno)d::%(message)s"
     logging.basicConfig(level='DEBUG', format=log_format)
+    load_dotenv()
+    user = os.environ["MONGODB_USER"]
+    password = os.environ["MONGODB_PASSWORD"]
+    address = os.environ["MONGO_DB_ADDRESS"]
+    token = os.environ["TW_ACCESS_TOKEN"]
+    token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
+    consumer_key = os.environ["TW_CONSUMER_KEY"]
+    consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
 
@@ -167,4 +168,5 @@ if __name__ == "__main__":
         token=token,
         token_secret=token_secret,
     )
+
     post_tweet(ohlcv_db, posts_db)
