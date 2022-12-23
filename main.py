@@ -145,13 +145,8 @@ def post_tweet(ohlcv_db, posts_db):
     except pymongo.errors.PyMongoError as e:
         logging.error("Error adding a post to db: %s", e)
 
-
-if __name__ == "__main__":
-    log_format = (
-        "%(asctime)s::%(levelname)s::%(name)s::" "%(filename)s::%(lineno)d::%(message)s"
-    )
-    logging.basicConfig(level="DEBUG", format=log_format)
-
+        
+def get_database():
     load_dotenv()
     user = os.environ["MONGODB_USER"]
     password = os.environ["MONGODB_PASSWORD"]
@@ -163,10 +158,17 @@ if __name__ == "__main__":
 
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
-    with client.start_session(causal_consistency = True) as my_session:
-        with my_session.start_transaction():
-            my_db = client["metrics"]
-            print(my_db.list_collection_names())
+    return client["metrics"]
+
+
+if __name__ == "__main__":
+    log_format = (
+        "%(asctime)s::%(levelname)s::%(name)s::" "%(filename)s::%(lineno)d::%(message)s"
+    )
+    logging.basicConfig(level="DEBUG", format=log_format)
+    
+    metrics = get_database()
+    print(metrics.list_collection_names())
 #     ohlcv_db = client.ohlcv_db
 #     posts_db = client.posts_db
 #     print(ohlcv_db.list_collection_names())
