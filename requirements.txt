@@ -1,0 +1,16 @@
+astroid==2.12.13
+autopep8==2.0.1
+dill==0.3.6
+dnspython==2.2.1
+isort==5.11.3
+lazy-object-proxy==1.8.0
+loguru==0.6.0
+mccabe==0.7.0
+platformdirs==2.6.0
+pycodestyle==2.10.0
+pylint==2.15.9
+pymongo==4.3.3
+python-dotenv==0.21.0
+tomli==2.0.1
+tomlkit==0.11.6
+wrapt==1.14.1
