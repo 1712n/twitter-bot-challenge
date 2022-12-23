@@ -163,17 +163,18 @@ if __name__ == "__main__":
 
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
+    print(client.list_database_names())
 
-    ohlcv_db = client.ohlcv_db
-    posts_db = client.posts_db
-    print(ohlcv_db.list_collection_names())
-    print(posts_db.list_collection_names())
+#     ohlcv_db = client.ohlcv_db
+#     posts_db = client.posts_db
+#     print(ohlcv_db.list_collection_names())
+#     print(posts_db.list_collection_names())
 
-    oauth = OAuth(
-        consumer_key=consumer_key,
-        consumer_secret=consumer_secret,
-        token=token,
-        token_secret=token_secret,
-    )
+#     oauth = OAuth(
+#         consumer_key=consumer_key,
+#         consumer_secret=consumer_secret,
+#         token=token,
+#         token_secret=token_secret,
+#     )
 
-    post_tweet(ohlcv_db, posts_db)
+#     post_tweet(ohlcv_db, posts_db)
