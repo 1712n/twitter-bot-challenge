@@ -148,6 +148,7 @@ if __name__ == "__main__":
     log_format = "%(asctime)s::%(levelname)s::%(name)s::" \
                  "%(filename)s::%(lineno)d::%(message)s"
     logging.basicConfig(level='DEBUG', format=log_format)
+
     load_dotenv()
     user = os.environ["MONGODB_USER"]
     password = os.environ["MONGODB_PASSWORD"]
@@ -156,6 +157,7 @@ if __name__ == "__main__":
     token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
     consumer_key = os.environ["TW_CONSUMER_KEY"]
     consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
+
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
 
