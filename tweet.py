@@ -141,7 +141,7 @@ def get_message_to_post():
     top_pairs_df = top_pairs_df.rename(columns={"_id": "pair"})
     top_pairs_df = top_pairs_df.rename(columns={"volume": "pair_volume"})
     # top_pairs_df = top_pairs_df.drop(columns=["_id"])
-    ohlcv_df = pd.DataFrame(list(ohlcv_collection.find()))
+    # ohlcv_df = pd.DataFrame(list(ohlcv_collection.find()))
     ohlcv_df = ohlcv_df[ohlcv_df["pair"] == pair_to_post]
     ohlcv_df["timestamp"] = pd.to_datetime(ohlcv_df["timestamp"])
     ohlcv_df = ohlcv_df.sort_values(by="timestamp", ascending=False)
