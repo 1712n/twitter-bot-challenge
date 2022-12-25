@@ -2,7 +2,7 @@ name: Template CryptoCapBot Python application
 
 on:
   push:
-    branches: ["my-branch-name"] # TODO: rename
+    branches: ["dominic"] # TODO: rename
 
 jobs:
   build:
@@ -28,4 +28,4 @@ jobs:
           TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
           # TODO: add more
         run: |
-          python main.py
+          python tweet.py
