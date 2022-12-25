@@ -71,7 +71,7 @@ def post_tweet():
 
 def get_pair_to_post(ohlcv_db, posts_db):
     # Query ohlcv_db for the top 100 pairs by compound volume
-    top_pairs = ohlcv_db.find({"compound_volume": -1}).limit(100)
+    top_pairs = ohlcv_db.data.locations.find({"compound_volume": -1}).limit(100)
 
     # Create a tailable cursor for the latest documents corresponding to those 100 pairs
     latest_posts = (
