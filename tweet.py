@@ -71,7 +71,7 @@ def post_tweet():
 
 def get_pair_to_post(ohlcv_db, posts_db):
     # Query ohlcv_db for the top 100 pairs by compound volume
-    top_pairs = ohlcv_db.data.locations.find({"compound_volume": -1}).limit(100)
+    top_pairs = ohlcv_db.find({"compound_volume": -1}).limit(100)
 
     # Create a tailable cursor for the latest documents corresponding to those 100 pairs
     latest_posts = (
@@ -81,11 +81,11 @@ def get_pair_to_post(ohlcv_db, posts_db):
     )
 
     # Convert the cursor to a list of documents
-    sorted_pairs = list(latest_posts)
+    sorted_pairs = list(map(lambda x: x, latest_posts))
 
     # Sort results by the oldest timestamp to find the pairs that haven't been posted for a while,
     # then corresponding volume to find the biggest markets among them
-    sorted_pairs = sorted(sorted_pairs, key=lambda x: (x['timestamp'], x['volume']))
+    sorted_pairs = sorted(sorted_pairs, key=lambda x: (x["timestamp"], x["volume"]))
 
     # Select the pair_to_post
     pair_to_post = sorted_pairs[0]
@@ -94,6 +94,7 @@ def get_pair_to_post(ohlcv_db, posts_db):
     market_values = ohlcv_db.find({"pair": pair_to_post["pair"]})
 
     return pair_to_post, market_values
+
 
 def compose_message(pair_to_post, market_values):
     # Initialize the message string
@@ -105,7 +106,6 @@ def compose_message(pair_to_post, market_values):
 
     # Return the composed message
     return message
-
 
 
 if __name__ == "__main__":
@@ -123,3 +123,21 @@ if __name__ == "__main__":
     # Bitstamp: 0.5%
     # Coinbase: 0.3%
     # Kraken: 0.2%
+
+    ohlcv_db = (
+        pymongo.MongoClient(mongodb_uri)
+        .get_database("ohlcv_db")
+        .get_collection("ohlcv")
+    )
+    posts_db = (
+        pymongo.MongoClient(mongodb_uri)
+        .get_database("posts_db")
+        .get_collection("posts")
+    )
+    post = get_pair_to_post(
+        ohlcv_db,
+        posts_db,
+    )
+    print(post)
+
+    post_tweet()
