@@ -69,40 +69,23 @@ def post_tweet():
     posts_db.insert_one(post)
 
 
-# def get_pair_to_post(ohlcv_db, posts_db):
-#     # Query ohlcv_db for the top 100 pairs by compound volume
-#     top_pairs = ohlcv_db.find().sort("compound_volume", -1).limit(100)
-
-#     # Query posts_db for the latest documents corresponding to those 100 pairs
-#     latest_posts = posts_db.find({"pair": {"$in": top_pairs}}).sort("timestamp", 1)
-
-#     # Sort results by the oldest timestamp to find the pairs that haven't been posted for a while,
-#     # then corresponding volume to find the biggest markets among them
-#     sorted_pairs = sorted(latest_posts, key=lambda x: (x["timestamp"], x["volume"]))
-
-#     # Select the pair_to_post
-#     pair_to_post = sorted_pairs[0]
-
-#     # Get the corresponding latest volumes by market values from ohlcv_db
-#     market_values = ohlcv_db.find({"pair": pair_to_post["pair"]})
-
-#     return pair_to_post, market_values
-
-
 def get_pair_to_post(ohlcv_db, posts_db):
     # Query ohlcv_db for the top 100 pairs by compound volume
-    top_pairs = ohlcv_db.find().sort("compound_volume", -1).limit(100)
+    top_pairs = ohlcv_db.data.locations.find({"compound_volume": -1}).limit(100)
 
     # Create a tailable cursor for the latest documents corresponding to those 100 pairs
     latest_posts = (
-        posts_db.find({"pair": {"$in": top_pairs}})
+        posts_db.data.locations.find({"pair": {"$in": top_pairs}})
         .sort("timestamp", 1)
         .add_option(pymongo.cursor.CursorType.TAILABLE)
     )
 
+    # Convert the cursor to a list of documents
+    sorted_pairs = list(latest_posts)
+
     # Sort results by the oldest timestamp to find the pairs that haven't been posted for a while,
     # then corresponding volume to find the biggest markets among them
-    sorted_pairs = sorted(latest_posts, key=lambda x: (x["timestamp"], x["volume"]))
+    sorted_pairs = sorted(sorted_pairs, key=lambda x: (x['timestamp'], x['volume']))
 
     # Select the pair_to_post
     pair_to_post = sorted_pairs[0]
@@ -112,7 +95,31 @@ def get_pair_to_post(ohlcv_db, posts_db):
 
     return pair_to_post, market_values
 
+def compose_message(pair_to_post, market_values):
+    # Initialize the message string
+    message = f"Top Market Venues for {pair_to_post['pair']}:\n"
+
+    # Iterate over the market values and append each market and its volume to the message
+    for market_value in market_values:
+        message += f"{market_value['market']}: {market_value['volume']}%\n"
+
+    # Return the composed message
+    return message
+
 
 
 if __name__ == "__main__":
-    post_tweet()
+    message = compose_message(
+        {"pair": "BTC/USD"},
+        [
+            {"market": "Bitstamp", "volume": 0.5},
+            {"market": "Coinbase", "volume": 0.3},
+            {"market": "Kraken", "volume": 0.2},
+        ],
+    )
+    print(message)
+    # OUTPUT:
+    # Top Market Venues for BTC/USD:
+    # Bitstamp: 0.5%
+    # Coinbase: 0.3%
+    # Kraken: 0.2%
