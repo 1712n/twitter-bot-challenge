@@ -128,7 +128,7 @@ ENV/
 env.bak/
 venv.bak/
 .env
-vevv_bot_vacancy
+venv_bot_vacancy
 
 # Spyder project settings
 .spyderproject
