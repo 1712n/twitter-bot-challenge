@@ -185,7 +185,7 @@ def get_message_to_post():
             merged["volume"] / merged["pair_volume"] * 100, 2
         )
         merged_list.append(merged)
-    message_to_post = "Top Market Venues for " + pair_to_post + ":\n"
+    message_to_post = "Top Market Venues for " + str(pair_to_post) + ":\n"
     for merged in sorted(merged_list, key=lambda x: x["market_share"], reverse=True):
         market = merged["market"]
         market_share = merged["market_share"]
