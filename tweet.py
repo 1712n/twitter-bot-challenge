@@ -132,31 +132,63 @@ def get_pair_to_post():
 #    ```
 
 
+# def get_message_to_post():
+#     pair_to_post = get_pair_to_post()
+#     top_pairs = get_top_pairs()
+#     top_pairs_df = pd.DataFrame(top_pairs)
+#     top_pairs_df = top_pairs_df[top_pairs_df["_id"] == pair_to_post]
+#     top_pairs_df = top_pairs_df.reset_index(drop=True)
+#     top_pairs_df = top_pairs_df.rename(columns={"_id": "pair"})
+#     top_pairs_df = top_pairs_df.rename(columns={"volume": "pair_volume"})
+#     # top_pairs_df = top_pairs_df.drop(columns=["_id"])
+#     ohlcv_df = pd.DataFrame(list(ohlcv_collection.find()))
+#     ohlcv_df = ohlcv_df[ohlcv_df["pair"] == pair_to_post]
+#     ohlcv_df["timestamp"] = pd.to_datetime(ohlcv_df["timestamp"])
+#     ohlcv_df = ohlcv_df.sort_values(by="timestamp", ascending=False)
+#     ohlcv_df = ohlcv_df.drop_duplicates(subset="market")
+#     ohlcv_df = ohlcv_df.reset_index(drop=True)
+#     merged_df = pd.merge(top_pairs_df, ohlcv_df, on="pair", how="left")
+#     merged_df["market_share"] = merged_df["volume"] / merged_df["pair_volume"]
+#     merged_df["market_share"] = merged_df["market_share"].apply(
+#         lambda x: round(x * 100, 2)
+#     )
+#     merged_df = merged_df.sort_values(by="market_share", ascending=False)
+#     message_to_post = "Top Market Venues for " + pair_to_post + ":\n"
+#     for i in range(0, len(merged_df)):
+#         market = merged_df["market"].iloc[i]
+#         market_share = merged_df["market_share"].iloc[i]
+#         message_to_post = message_to_post + market + " " + str(market_share) + "%\n"
+#     return message_to_post
+
+
 def get_message_to_post():
     pair_to_post = get_pair_to_post()
     top_pairs = get_top_pairs()
-    top_pairs_df = pd.DataFrame(top_pairs)
-    top_pairs_df = top_pairs_df[top_pairs_df["_id"] == pair_to_post]
-    top_pairs_df = top_pairs_df.reset_index(drop=True)
-    top_pairs_df = top_pairs_df.rename(columns={"_id": "pair"})
-    top_pairs_df = top_pairs_df.rename(columns={"volume": "pair_volume"})
-    # top_pairs_df = top_pairs_df.drop(columns=["_id"])
-    # ohlcv_df = pd.DataFrame(list(ohlcv_collection.find()))
-    # ohlcv_df = ohlcv_df[ohlcv_df["pair"] == pair_to_post]
-    # ohlcv_df["timestamp"] = pd.to_datetime(ohlcv_df["timestamp"])
-    # ohlcv_df = ohlcv_df.sort_values(by="timestamp", ascending=False)
-    # ohlcv_df = ohlcv_df.drop_duplicates(subset="market")
-    # ohlcv_df = ohlcv_df.reset_index(drop=True)
-    # merged_df = pd.merge(top_pairs_df, ohlcv_df, on="pair", how="left")
-    # merged_df["market_share"] = merged_df["volume"] / merged_df["pair_volume"]
-    # merged_df["market_share"] = merged_df["market_share"].apply(
-    #     lambda x: round(x * 100, 2)
-    # )
-    merged_df = merged_df.sort_values(by="market_share", ascending=False)
+    top_pairs_dict = {pair["_id"]: pair for pair in top_pairs}
+    top_pair = top_pairs_dict[pair_to_post]
+    ohlcv_list = list(ohlcv_collection.find({"pair": pair_to_post}))
+    ohlcv_list = sorted(ohlcv_list, key=lambda x: x["timestamp"], reverse=True)
+    ohlcv_list = [
+        x
+        for i, x in enumerate(ohlcv_list)
+        if i == 0 or x["market"] != ohlcv_list[i - 1]["market"]
+    ]
+    merged_list = []
+    for ohlcv in ohlcv_list:
+        merged = {
+            "pair": ohlcv["pair"],
+            "pair_volume": top_pair["volume"],
+            "market": ohlcv["market"],
+            "volume": ohlcv["volume"],
+        }
+        merged["market_share"] = round(
+            merged["volume"] / merged["pair_volume"] * 100, 2
+        )
+        merged_list.append(merged)
     message_to_post = "Top Market Venues for " + pair_to_post + ":\n"
-    for i in range(0, len(merged_df)):
-        market = merged_df["market"].iloc[i]
-        market_share = merged_df["market_share"].iloc[i]
+    for merged in sorted(merged_list, key=lambda x: x["market_share"], reverse=True):
+        market = merged["market"]
+        market_share = merged["market_share"]
         message_to_post = message_to_post + market + " " + str(market_share) + "%\n"
     return message_to_post
 
