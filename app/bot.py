@@ -80,6 +80,7 @@ class MarketCapBot:
         message_dict = {key:round((value/total_volume)*100,2) for key,value in message_dict.items()}
         return message_dict
 
+
     def compose_message(self,pair:str=None,message_dict:dict=None) -> str:
         """
             method to compose a message for a given pair and message_dict
@@ -91,13 +92,15 @@ class MarketCapBot:
             try:
                 message_dict = self._get_message_dict(pair=pair)
             except Exception as e:
-                logging.debug('Error getting message_dict',e)
+                logging.error('Error getting message_dict',e)
         
         logging.info("Composing message...")  
         message = f"Top Market Venues for {pair}:\n"
         for marketVenue,percentage in sorted(message_dict.items()):
             message += f"{marketVenue.capitalize()}: {percentage}%\n"
+        logging.info("Message composed!")
         return message
+
 
     def _save_message_to_db(self,pair:str,message:str=None) -> None:
         """
@@ -113,9 +116,10 @@ class MarketCapBot:
                 'time':datetime.datetime.utcnow()
             })
             logging.info("Message saved to database!")
+
         except Exception as e:
-            logging.debug("Error saving message to database",e)
-            raise e
+            logging.error("Error saving message to database",e)
+
 
     def post_message(self,pair:str=None,message:str=None) -> None:
         """
@@ -135,10 +139,11 @@ class MarketCapBot:
                 self.twitter_client.create_tweet(text=message,in_reply_to_tweet_id=pair)
             logging.info("Message posted!")
         except Exception as e:
-            logging.debug("Error posting message",e)
+            logging.error("Error posting message",e)
             raise e
 
         self._save_message_to_db(pair=pair,message=message)
+
 
     def ping(self) -> None:
         """
