@@ -32,4 +32,4 @@ jobs:
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
           MONGO_DB_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
         run: |
-          python app/bot.py
+          python app/main.py
