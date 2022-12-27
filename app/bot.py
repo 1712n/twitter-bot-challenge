@@ -32,8 +32,8 @@ class MarketCapBot:
             Method to return the pair to post
         """
         top_pairs = db.get_top_pairs(max_num=100)
-        oldest_posted_pairs = db.get_oldest_posted_pairs(top_pairs,max_num=5)
-        pair_to_post = db.get_pair_to_post(top_pairs,oldest_posted_pairs)
+        latest_posted_pairs = db.get_latest_posted_pairs(top_pairs,max_num=5)
+        pair_to_post = db.get_pair_to_post(top_pairs,latest_posted_pairs)
         return pair_to_post
         
 
@@ -146,8 +146,8 @@ class MarketCapBot:
                     response = self.twitter_client.create_tweet(text=message)
             logging.info("Message posted!")
         except Exception as e:
-            logging.error("Error posting message",e)
-            raise e
+            logging.error("Error posting message %s"%e)
+            return
 
         self._save_message_to_db(tweet_id=response.data['id'],pair=pair,message=message)
 

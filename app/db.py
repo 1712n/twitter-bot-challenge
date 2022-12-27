@@ -52,26 +52,26 @@ def get_top_pairs(max_num:int=100) -> List:
     return top_100_pairs_by_volume
 
 
-def get_oldest_posted_pairs(top_pairs:List,max_num:int=5) -> Set:
+def get_latest_posted_pairs(top_pairs:List,max_num:int=5) -> Set:
     """
-        Function to return at most the top max_num distinct pairs by oldest post time from posts db
+        Function to return at most the top max_num distinct pairs by latest post time from posts db
     """
     try:
-        logging.info("Getting oldest posted pairs...")
-        posted_pairs_among_top = posts_db.find({'pair' : {'$in':top_pairs}}).sort('time', pymongo.ASCENDING).distinct('pair')
+        logging.info("Getting latest posted pairs...")
+        posted_pairs_among_top = posts_db.find({'pair' : {'$in':top_pairs}}).sort('time', pymongo.DESCENDING).distinct('pair')
     except Exception as e:
-        logging.debug("Error getting oldest posted pairs:", e)
+        logging.debug("Error getting latest posted pairs:", e)
         return set()
 
-    posted_pairs_set_among_top = set()
+    latest_posted_pairs_set = set()
 
     # At most top max_num distinct latest posted pairs among top pairs
     for pair in posted_pairs_among_top:
-        if pair not in posted_pairs_set_among_top:
-            posted_pairs_set_among_top.add(pair)
-        if len(posted_pairs_set_among_top) == max_num:
+        if pair not in latest_posted_pairs_set:
+            latest_posted_pairs_set.add(pair)
+        if len(latest_posted_pairs_set) == max_num:
             break
-    return posted_pairs_set_among_top
+    return latest_posted_pairs_set
 
 def get_latest_posted_pair() -> str:
     """
@@ -85,20 +85,20 @@ def get_latest_posted_pair() -> str:
         return str()
     return document[0].get('pair')
 
-def get_pair_to_post(top_pairs:List,oldest_posted_pairs:Iterable = None) -> str:
+def get_pair_to_post(top_pairs:List,latest_posted_pairs:Iterable = None) -> str:
     """
         Function to return the pair to post
     """
     try:
         logging.info("Getting pair to post...")
-        if (oldest_posted_pairs is None) or len(oldest_posted_pairs) == 0:
+        if (latest_posted_pairs is None) or len(latest_posted_pairs) == 0:
             # the first pair by volume
             return top_pairs[0]
 
         last_posted = get_latest_posted_pair()
         for pair in top_pairs:
-            if pair in oldest_posted_pairs and not pair == last_posted:
-                # Choose the first pair by volume among those oldest posted pairs
+            if pair in latest_posted_pairs and not pair == last_posted:
+                # Choose the first pair by volume among those latest posted pairs
                 return pair
         else:
             # Or the first pair by volume
@@ -109,7 +109,7 @@ def get_pair_to_post(top_pairs:List,oldest_posted_pairs:Iterable = None) -> str:
 if __name__ == "__main__":
 
     top = ['A','B','C']
-    assert('A' == get_pair_to_post(top,oldest_posted_pairs={}))
-    assert('B' == get_pair_to_post(top,oldest_posted_pairs={'B'}))
+    assert('A' == get_pair_to_post(top,latest_posted_pairs={}))
+    assert('B' == get_pair_to_post(top,latest_posted_pairs={'B'}))
     print(ohlcv_db.count_documents({}))
     print(posts_db.count_documents({}))
