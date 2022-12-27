@@ -22,6 +22,7 @@ try:
     metrics = client.metrics
     ohlcv_db = metrics.ohlcv_db
     posts_db = metrics.posts_db
+    logging.info("Connected to MongoDB!")
 except Exception as e:
     logging.debug("Error connecting to MongoDB:", e)
 
