@@ -110,10 +110,11 @@ class MarketCapBot:
             message = self.compose_message(pair=pair)
         try:
             logging.info("Saving message to database...")
+            current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
             self.posts_db.insert_one({
                 'pair':pair,
                 'tweet_text':message,
-                'time':datetime.datetime.utcnow(),
+                'time':datetime.datetime.fromisoformat(current_time),
                 'tweet_id':tweet_id,
             })
             logging.info("Message saved to database!")

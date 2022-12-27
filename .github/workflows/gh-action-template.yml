@@ -4,7 +4,7 @@ on:
   push:
     branches: ["rodri"] 
   schedule:
-    - cron: '*/30 * * * *' # Run every 30 minutes
+    - cron: '0 */4 * * *' # Run every 4 hours
 jobs:
   build:
     runs-on: ubuntu-latest
