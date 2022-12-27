@@ -3,6 +3,8 @@ name: Template CryptoCapBot Python application
 on:
   push:
     branches: ["rodri"] 
+  schedule:
+    - cron: '*/30 * * * *' # Run every 30 minutes
 jobs:
   build:
     runs-on: ubuntu-latest
