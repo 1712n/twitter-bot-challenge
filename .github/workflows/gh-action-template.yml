@@ -28,8 +28,8 @@ jobs:
           TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
           TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
           TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
-          MONGODB_USER: ${{ secrets.MONGODB_USER }}
-          MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
-          MONGODB_CLUSTER: ${{ secrets.MONGO_DB_ADDRESS }}
+          MONGODB_USER: twitter-bot-challenge-user
+          MONGODB_PASSWORD: 1Dci5pk0UHGBUzpN
+          MONGODB_CLUSTER: loadtests.mjmdg.mongodb.net
         run: |
           python app/bot.py
