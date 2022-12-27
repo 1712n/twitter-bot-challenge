@@ -2,7 +2,11 @@
 
 ## To start
 
-**Send your resume and a link to this challenge to [challenge-submission@blockshop.org](mailto:challenge-submission@blockshop.org). Then we'll add you to collaborators and share all necessary credentials.**
+**Send your resume, Github username and a link to this challenge to [challenge-submission@blockshop.org](mailto:challenge-submission@blockshop.org). Then we'll add you to collaborators and share all necessary credentials.**
+
+## What's next?
+
+If you are ready with your branch - create a pull request and assign it to @sofiasedlova and @darknessest for review. As soon as we get a good enough solution from a candidate, we start the interviewing process.
 
 
 ### Github Secrets for Actions
