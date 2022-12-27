@@ -12,7 +12,7 @@ try:
         access_token_secret=config.TW_ACCESS_TOKEN_SECRET,
     )
 except Exception as e:
-    logging.debug("Error connecting to Twitter:", e)
+    logging.error("Error connecting to Twitter:", e)
 
 if __name__ == "__main__":
     print(client.get_recent_tweets_count("BTC-USD"))

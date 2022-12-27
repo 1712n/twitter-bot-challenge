@@ -10,9 +10,9 @@ else:
     logging.basicConfig(level=logging.INFO)
     
 # Connect to MongoDB
-mongo_user = config.MG_USER
-mongo_pass = config.MG_PASSWORD
-mongo_cluster = config.MG_CLUSTER
+mongo_user = config.MONGODB_USER
+mongo_pass = config.MONGODB_PASSWORD
+mongo_cluster = config.MONGO_DB_ADDRESS
 
 try:
     logging.info("Connecting to MongoDB...")
