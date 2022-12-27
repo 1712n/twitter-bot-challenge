@@ -5,6 +5,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # General settings
+DEBUG = bool(int(os.getenv("DEBUG")))
 LIVE = bool(int(os.getenv("LIVE")))
 
 # Twitter API settings
