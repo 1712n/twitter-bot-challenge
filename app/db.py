@@ -4,6 +4,11 @@ from typing import Iterable, List, Set
 import config
 import pymongo
 
+if config.DEBUG:
+    logging.basicConfig(level=logging.DEBUG)
+else:
+    logging.basicConfig(level=logging.INFO)
+    
 # Connect to MongoDB
 mongo_user = config.MG_USER
 mongo_pass = config.MG_PASSWORD
