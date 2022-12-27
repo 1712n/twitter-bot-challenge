@@ -102,7 +102,7 @@ class MarketCapBot:
         return message
 
 
-    def _save_message_to_db(self,pair:str,message:str=None) -> None:
+    def _save_message_to_db(self,tweet_id,pair:str,message:str=None) -> None:
         """
             Method to save message to the database
         """
@@ -113,7 +113,8 @@ class MarketCapBot:
             self.posts_db.insert_one({
                 'pair':pair,
                 'tweet_text':message,
-                'time':datetime.datetime.utcnow()
+                'time':datetime.datetime.utcnow(),
+                'tweet_id':tweet_id,
             })
             logging.info("Message saved to database!")
 
@@ -134,15 +135,20 @@ class MarketCapBot:
         try:
             logging.info("Posting message...")
             if pair_post_count == 0:
-                self.twitter_client.create_tweet(text=message)
+                response = self.twitter_client.create_tweet(text=message)
             else:
-                self.twitter_client.create_tweet(text=message,in_reply_to_tweet_id=pair)
+                pair_post = self.posts_db.find_one({'pair':pair})
+                tweet_id = pair_post.get('tweet_id',None)
+                if tweet_id is not None:
+                    response = self.twitter_client.create_tweet(text=message,in_reply_to_tweet_id=tweet_id)
+                else:
+                    response = self.twitter_client.create_tweet(text=message)
             logging.info("Message posted!")
         except Exception as e:
             logging.error("Error posting message",e)
             raise e
 
-        self._save_message_to_db(pair=pair,message=message)
+        self._save_message_to_db(tweet_id=response.data['id'],pair=pair,message=message)
 
 
     def ping(self) -> None:
