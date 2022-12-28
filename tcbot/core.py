@@ -1,3 +1,4 @@
+from datetime import datetime
 from pymongo import MongoClient
 from tweepy import API as TwitterAPI
 
@@ -119,8 +120,8 @@ class TCBot:
             },
             {
                 "$sort": {
-                    "total_volume": -1,
-                    "last_post.timestamp": 1
+                    "last_post.timestamp": 1,
+                    "total_volume": -1
                 }
             },
             {
@@ -152,6 +153,19 @@ class TCBot:
         return message_to_post
 
 
+    def save_post_to_db(self, thread_id, pair, message):
+        logger.info("Saving message to 'posts_db'...")
+
+        self.database.posts_db.insert_one({
+            'pair': pair,
+            'message': message,
+            'thread_id': thread_id,
+            'timestamp': datetime.utcnow()
+        })
+
+        logger.info("Message saved to 'posts_db' successfully!")
+
+
     def post_tweet(self, message: str):
         logger.debug("Posting the following message:")
 
@@ -159,7 +173,7 @@ class TCBot:
             logger.debug("\t\033[3m{}\033[0m", line)
 
         thread_id = get_timestamp()
-        logger.debug("Posted to {}", thread_id)
+        logger.info("The message has been posted to Twitter: {}", thread_id)
 
         return thread_id
 
@@ -170,9 +184,13 @@ class TCBot:
         pair_to_post = self.get_pair_to_post()
 
         if pair_to_post:
-            logger.info("The pair '{}' needs to be posted!", pair_to_post['_id'])
+            pair = pair_to_post['_id']
+
+            logger.info("The pair '{}' needs to be posted!", pair)
+
             message_to_post = self.get_message_to_post(pair_to_post)
             thread_id = self.post_tweet(message_to_post)
+            self.save_post_to_db(thread_id, pair, message_to_post)
         else:
             logger.info("No pair to post found :(")
 
