@@ -1,17 +1,22 @@
 from datetime import datetime
 from pymongo import MongoClient
-from tweepy import API as TwitterAPI
+from tweepy import Client as TwitterClient
 
 from tcbot.logging import logger
-from tcbot.utils import get_percentage, get_timestamp, sort_dict
+from tcbot.utils import get_percentage, sort_dict
 
 
 class TCBot:
-    def __init__(self, mongodb_client: MongoClient, twitter_api: TwitterAPI, db_name = "metrics"):
+    def __init__(
+        self,
+        mongodb_client: MongoClient,
+        twitter_client: TwitterClient,
+        db_name = "metrics"
+    ):
         logger.debug("Initializing TCBot...")
 
         self.database = mongodb_client.get_database(db_name)
-        self.twitter_api = twitter_api
+        self.twitter_client = twitter_client
 
 
     def get_pair_to_post(self, granularity = '1h'):
@@ -133,8 +138,8 @@ class TCBot:
 
         if len(result) > 0:
             return result[0]
-        else:
-            return None
+
+        return None
 
 
     def get_message_to_post(self, pair_to_post):
@@ -153,29 +158,34 @@ class TCBot:
         return message_to_post
 
 
-    def save_post_to_db(self, thread_id, pair, message):
+    def save_post_to_db(self, pair, tweet_id, message):
         logger.info("Saving message to 'posts_db'...")
 
         self.database.posts_db.insert_one({
             'pair': pair,
             'message': message,
-            'thread_id': thread_id,
+            'tweet_id': tweet_id,
             'timestamp': datetime.utcnow()
         })
 
         logger.info("Message saved to 'posts_db' successfully!")
 
 
-    def post_tweet(self, message: str):
+    def post_tweet(self, message: str, thread_id = None):
         logger.debug("Posting the following message:")
 
         for line in message.splitlines():
             logger.debug("\t\033[3m{}\033[0m", line)
 
-        thread_id = get_timestamp()
-        logger.info("The message has been posted to Twitter: {}", thread_id)
+        response = self.twitter_client.create_tweet(
+            text=message,
+            in_reply_to_tweet_id=thread_id
+        )
 
-        return thread_id
+        tweet_id = response.data['id']
+        logger.info("The message has been posted to Twitter: {}", tweet_id)
+
+        return tweet_id
 
 
     def start(self):
@@ -185,12 +195,20 @@ class TCBot:
 
         if pair_to_post:
             pair = pair_to_post['_id']
+            thread_id = pair_to_post.get('last_post', {}).get('tweet_id')
 
             logger.info("The pair '{}' needs to be posted!", pair)
 
             message_to_post = self.get_message_to_post(pair_to_post)
-            thread_id = self.post_tweet(message_to_post)
-            self.save_post_to_db(thread_id, pair, message_to_post)
+            tweet_id = self.post_tweet(
+                message=message_to_post,
+                thread_id=thread_id
+            )
+            self.save_post_to_db(
+                pair=pair,
+                tweet_id=tweet_id,
+                message=message_to_post
+            )
         else:
             logger.info("No pair to post found :(")
 
