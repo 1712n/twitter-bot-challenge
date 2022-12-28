@@ -1,11 +1,11 @@
 import datetime
 import logging
-import sys
 
 import db
 import pymongo
 import tweepy
 import twitter
+from db import mongodb_read_error_handler, mongodb_write_error_handler
 
 
 class MarketCapBot:
@@ -37,7 +37,7 @@ class MarketCapBot:
         pair_to_post = db.get_pair_to_post(top_pairs,latest_posted_pairs)
         return pair_to_post
         
-
+    @mongodb_read_error_handler
     def _get_message_dict(self,pair:str=None,pair_symbol:str=None,pair_base:str=None) -> dict:
         """
             Method to return a dictionary of marketVenue:volume percentage for a given pair
@@ -52,41 +52,34 @@ class MarketCapBot:
                 pair_base = pair.split('-')[1].lower()
             except:
                 raise ValueError("Invalid pair provided, must be in the format 'SYMBOL-BASE")
-        try: 
-            ohlcv_documents_for_pair = self.ohlcv_db.find({'pair_symbol':pair_symbol,'pair_base':pair_base}).sort([
-                ('timestamp', pymongo.DESCENDING),
-                ])
+            
+        ohlcv_documents_for_pair = self.ohlcv_db.find(
+            {'pair_symbol':pair_symbol,'pair_base':pair_base}
+            ).sort('timestamp', pymongo.DESCENDING)
 
-            latest_date = None
-            message_dict = {
-                'others':0
-            }
-            for item in ohlcv_documents_for_pair:
-                
-                if latest_date is None:
-                    latest_date = item['timestamp']
-                if item['timestamp'] == latest_date:
-                    if item['marketVenue'] not in message_dict:
-                        if len(message_dict) <= 5:
-                            # key for top 5 marketVenues
-                            message_dict[item['marketVenue']] = float(item['volume'])
-                        else:
-                            # store the rest in 'others'
-                            message_dict['others'] += float(item['volume'])
-                        continue    
-                    message_dict[item['marketVenue']] += float(item['volume'])
-                else:
-                    break
-            total_volume = sum(message_dict.values())
-            message_dict = {key:round((value/total_volume)*100,2) for key,value in message_dict.items()}
-            return message_dict
-
-        except pymongo.errors.PyMongoError as e:
-            logging.error("Error reaching MongoDB: %s"%e)
-            sys.exit(1)  
-        except Exception as e:
-            logging.error("Error getting message_dict %s"%e)
-            sys.exit(1)
+        latest_date = None
+        message_dict = {
+            'others':0
+        }
+        for item in ohlcv_documents_for_pair:
+            
+            if latest_date is None:
+                latest_date = item['timestamp']
+            if item['timestamp'] == latest_date:
+                if item['marketVenue'] not in message_dict:
+                    if len(message_dict) <= 5:
+                        # key for top 5 marketVenues
+                        message_dict[item['marketVenue']] = float(item['volume'])
+                    else:
+                        # store the rest in 'others'
+                        message_dict['others'] += float(item['volume'])
+                    continue    
+                message_dict[item['marketVenue']] += float(item['volume'])
+            else:
+                break
+        total_volume = sum(message_dict.values())
+        message_dict = {key:round((value/total_volume)*100,2) for key,value in message_dict.items()}
+        return message_dict
 
     def compose_message(self,pair:str=None,message_dict:dict=None) -> str:
         """
@@ -105,28 +98,23 @@ class MarketCapBot:
         logging.info("Message composed!")
         return message
 
-
+    @mongodb_write_error_handler
     def _save_message_to_db(self,pair:str,tweet_id:str=None,message:str=None) -> None:
-            """
-                Method to save message to the database
-            """
-            if message is None:
-                message = self.compose_message(pair=pair)
-            try:
-                logging.info("Saving message to database...")
-                current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
-                post_document = {
-                    'pair':pair,
-                    'tweet_text':message,
-                    'time':datetime.datetime.fromisoformat(current_time)
-                }
-                if tweet_id is not None:
-                    post_document['tweet_id'] = tweet_id
-                self.posts_db.insert_one(post_document)
-                logging.info("Message saved to database!")
-            except Exception as e:
-                logging.error("Error saving message to database %s"%e)
-                return
+        """
+            Method to save message to the database
+        """
+        if message is None:
+            message = self.compose_message(pair=pair)
+        logging.info("Saving message to database...")
+        current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+        post_document = {
+            'pair':pair,
+            'tweet_text':message,
+            'time':datetime.datetime.fromisoformat(current_time)
+        }
+        if tweet_id is not None:
+            post_document['tweet_id'] = tweet_id
+        self.posts_db.insert_one(post_document)
 
     def post_message(self,pair:str=None,message:str=None) -> None:
         """

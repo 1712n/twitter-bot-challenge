@@ -19,19 +19,18 @@ try:
     logging.info("Connecting to MongoDB...")
 
     client = pymongo.MongoClient(f"mongodb+srv://{mongo_user}:{mongo_pass}@{mongo_cluster}")
-
     metrics = client.metrics
     ohlcv_db = metrics.ohlcv_db
     posts_db = metrics.posts_db
-    logging.info("Connected to MongoDB!")
 
 except pymongo.errors.ConnectionFailure:
     logging.error("Connection to MongoDB failed!")
+except pymongo.errors.PyMongoError as e:
+    logging.error("Error connecting to MongoDB: %s" %e)
     sys.exit(1)
+else:
+    logging.info("Connected to MongoDB!")
 
-except Exception as e:
-    logging.error("Error connecting to MongoDB:s%" %e)
-    sys.exit(1)
 
 def mongodb_read_error_handler(func):
     """
@@ -41,7 +40,22 @@ def mongodb_read_error_handler(func):
         try:
             return func(*args,**kwargs)
         except pymongo.errors.PyMongoError as e:
-            logging.error("Error reading from MongoDB: %s" %e)
+            logging.error("Error reading from MongoDB in %s: %s" %(func.__name__,e))
+            sys.exit(1)
+        except Exception as e:
+            logging.error("Error in %s :\n %s" %(func.__name__,e))
+            sys.exit(1)
+    return wrapper
+
+def mongodb_write_error_handler(func):
+    """
+        Decorator to handle MongoDB write errors
+    """
+    def wrapper(*args,**kwargs):
+        try:
+            return func(*args,**kwargs)
+        except pymongo.errors.PyMongoError as e:
+            logging.error("Error writing to MongoDB in %s: %s" %(func.__name__,e))
             sys.exit(1)
         except Exception as e:
             logging.error("Error in %s :\n %s" %(func.__name__,e))
