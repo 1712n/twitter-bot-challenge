@@ -1,0 +1,4 @@
+pymongo[srv]
+tweepy[test]
+pandas
+dotenv
