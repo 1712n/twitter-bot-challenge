@@ -143,7 +143,7 @@ class MarketCapBot:
             else:
                 self.twitter_client.create_tweet(
                     text=message,
-                    in_reply_to_status_id=pair_main_post['tweet_id']
+                    in_reply_to_tweet_id=pair_main_post['tweet_id']
                     )
         except tweepy.TweepyException as e:
             logging.error("%s"%e)
