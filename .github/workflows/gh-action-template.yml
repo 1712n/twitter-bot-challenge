@@ -30,7 +30,8 @@ jobs:
           TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
           TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
           TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
-          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          #MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          MONGODB_USER: non_existent_user
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
           MONGO_DB_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
         run: |

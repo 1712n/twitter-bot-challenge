@@ -1,5 +1,6 @@
 import datetime
 import logging
+import sys
 
 import db
 import pymongo
@@ -51,35 +52,41 @@ class MarketCapBot:
                 pair_base = pair.split('-')[1].lower()
             except:
                 raise ValueError("Invalid pair provided, must be in the format 'SYMBOL-BASE")
+        try: 
+            ohlcv_documents_for_pair = self.ohlcv_db.find({'pair_symbol':pair_symbol,'pair_base':pair_base}).sort([
+                ('timestamp', pymongo.DESCENDING),
+                ])
+
+            latest_date = None
+            message_dict = {
+                'others':0
+            }
+            for item in ohlcv_documents_for_pair:
                 
-        ohlcv_documents_for_pair = self.ohlcv_db.find({'pair_symbol':pair_symbol,'pair_base':pair_base}).sort([
-            ('timestamp', pymongo.DESCENDING),
-            ])
+                if latest_date is None:
+                    latest_date = item['timestamp']
+                if item['timestamp'] == latest_date:
+                    if item['marketVenue'] not in message_dict:
+                        if len(message_dict) <= 5:
+                            # key for top 5 marketVenues
+                            message_dict[item['marketVenue']] = float(item['volume'])
+                        else:
+                            # store the rest in 'others'
+                            message_dict['others'] += float(item['volume'])
+                        continue    
+                    message_dict[item['marketVenue']] += float(item['volume'])
+                else:
+                    break
+            total_volume = sum(message_dict.values())
+            message_dict = {key:round((value/total_volume)*100,2) for key,value in message_dict.items()}
+            return message_dict
 
-        latest_date = None
-        message_dict = {
-            'others':0
-        }
-        for item in ohlcv_documents_for_pair:
-            
-            if latest_date is None:
-                latest_date = item['timestamp']
-            if item['timestamp'] == latest_date:
-                if item['marketVenue'] not in message_dict:
-                    if len(message_dict) <= 5:
-                        # key for top 5 marketVenues
-                        message_dict[item['marketVenue']] = float(item['volume'])
-                    else:
-                        # store the rest in 'others'
-                        message_dict['others'] += float(item['volume'])
-                    continue    
-                message_dict[item['marketVenue']] += float(item['volume'])
-            else:
-                break
-        total_volume = sum(message_dict.values())
-        message_dict = {key:round((value/total_volume)*100,2) for key,value in message_dict.items()}
-        return message_dict
-
+        except pymongo.errors.PyMongoError as e:
+            logging.error("Error reaching MongoDB: %s"%e)
+            sys.exit(1)  
+        except Exception as e:
+            logging.error("Error getting message_dict %s"%e)
+            sys.exit(1)
 
     def compose_message(self,pair:str=None,message_dict:dict=None) -> str:
         """
@@ -89,10 +96,7 @@ class MarketCapBot:
         if pair is None:
             pair = self.get_pair_to_post()
         if message_dict is None:
-            try:
-                message_dict = self._get_message_dict(pair=pair)
-            except Exception as e:
-                logging.error('Error getting message_dict',e)
+            message_dict = self._get_message_dict(pair=pair)
         
         logging.info("Composing message...")  
         message = f"Top Market Venues for {pair}:\n"

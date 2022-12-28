@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import Iterable, List, Set
 
 import config
@@ -23,20 +24,38 @@ try:
     ohlcv_db = metrics.ohlcv_db
     posts_db = metrics.posts_db
     logging.info("Connected to MongoDB!")
+
+except pymongo.errors.ConnectionFailure:
+    logging.error("Connection to MongoDB failed!")
+    sys.exit(1)
+
 except Exception as e:
-    logging.debug("Error connecting to MongoDB:", e)
+    logging.error("Error connecting to MongoDB:s%" %e)
+    sys.exit(1)
+
+def mongodb_read_error_handler(func):
+    """
+        Decorator to handle MongoDB read errors
+    """
+    def wrapper(*args,**kwargs):
+        try:
+            return func(*args,**kwargs)
+        except pymongo.errors.PyMongoError as e:
+            logging.error("Error reading from MongoDB: %s" %e)
+            sys.exit(1)
+        except Exception as e:
+            logging.error("Error in %s :\n %s" %(func.__name__,e))
+            sys.exit(1)
+    return wrapper
 
 
+@mongodb_read_error_handler
 def get_top_pairs(max_num:int=100) -> List:
     """
         Function to return at most the top max_num distinct pairs by compound volume from ohlcv db
     """
-    try:
-        logging.info("Getting top pairs by volume...")
-        ohlcv_documents = ohlcv_db.find({},{'_id':False}).sort('volume', pymongo.DESCENDING)
-    except Exception as e:
-        logging.debug("Error getting top pairs:", e)
-        return list()
+    logging.info("Getting top pairs by volume...")
+    ohlcv_documents = ohlcv_db.find({},{'_id':False}).sort('volume', pymongo.DESCENDING)
 
     top_100_pairs_by_volume_set = set()
     top_100_pairs_by_volume = list()
@@ -52,16 +71,12 @@ def get_top_pairs(max_num:int=100) -> List:
     return top_100_pairs_by_volume
 
 
+@mongodb_read_error_handler
 def get_latest_posted_pairs(top_pairs:List,max_num:int=5) -> Set:
     """
         Function to return at most the top max_num distinct pairs by latest post time from posts db
     """
-    try:
-        logging.info("Getting latest posted pairs...")
-        posted_pairs_among_top = posts_db.find({'pair' : {'$in':top_pairs}}).sort('time', pymongo.DESCENDING).distinct('pair')
-    except Exception as e:
-        logging.debug("Error getting latest posted pairs:", e)
-        return set()
+    posted_pairs_among_top = posts_db.find({'pair' : {'$in':top_pairs}}).sort('time', pymongo.DESCENDING).distinct('pair')
 
     latest_posted_pairs_set = set()
 
@@ -73,39 +88,32 @@ def get_latest_posted_pairs(top_pairs:List,max_num:int=5) -> Set:
             break
     return latest_posted_pairs_set
 
+
+@mongodb_read_error_handler
 def get_latest_posted_pair() -> str:
     """
         Function to return the latest posted pair
     """
-    try:
-        logging.info("Getting latest posted pair...")
-        document = posts_db.find({}).sort('time', pymongo.DESCENDING).limit(1)
-    except Exception as e:
-        logging.debug("Error getting latest posted pair:", e)
-        return str()
+    document = posts_db.find({}).sort('time', pymongo.DESCENDING).limit(1)
     return document[0].get('pair')
 
 def get_pair_to_post(top_pairs:List,latest_posted_pairs:Iterable = None) -> str:
     """
         Function to return the pair to post
     """
-    try:
-        logging.info("Getting pair to post...")
-        if (latest_posted_pairs is None) or len(latest_posted_pairs) == 0:
-            # the first pair by volume
-            return top_pairs[0]
+    logging.info("Getting pair to post...")
+    if (latest_posted_pairs is None) or len(latest_posted_pairs) == 0:
+        # the first pair by volume
+        return top_pairs[0]
 
-        last_posted = get_latest_posted_pair()
-        for pair in top_pairs:
-            if pair in latest_posted_pairs and not pair == last_posted:
-                # Choose the first pair by volume among those latest posted pairs
-                return pair
-        else:
-            # Or the first pair by volume
-            return top_pairs[0]
-    except Exception as e:
-        logging.debug("Error getting pair to post:", e)
-        return str()
+    last_posted = get_latest_posted_pair()
+    for pair in top_pairs:
+        if pair in latest_posted_pairs and not pair == last_posted:
+            # Choose the first pair by volume among those latest posted pairs
+            return pair
+    else:
+        # Or the first pair by volume
+        return top_pairs[0]
 if __name__ == "__main__":
 
     top = ['A','B','C']
