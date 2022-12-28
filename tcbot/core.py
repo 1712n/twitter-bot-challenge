@@ -1,8 +1,8 @@
 from pymongo import MongoClient
-from pymongo.database import Database
 from tweepy import API as TwitterAPI
 
 from tcbot.logging import logger
+from tcbot.utils import get_percentage, get_timestamp, sort_dict
 
 
 class TCBot:
@@ -28,7 +28,7 @@ class TCBot:
                     "_id": {
                         "pair_symbol": "$pair_symbol",
                         "pair_base": "$pair_base",
-                        "market": "$marketVenue"
+                        "market_venue": "$marketVenue"
                     },
                     "total_volume": {
                         "$sum": {
@@ -51,9 +51,17 @@ class TCBot:
                     },
                     "markets": {
                         "$push": {
-                            "name": "$_id.market",
-                            "volume": "$total_volume"
+                            "k": "$_id.market_venue",
+                            "v": "$total_volume"
                         }
+                    }
+                }
+            },
+            {
+                "$project": {
+                    "total_volume": 1,
+                    "markets": {
+                        "$arrayToObject": "$markets"
                     }
                 }
             },
@@ -116,7 +124,7 @@ class TCBot:
                 }
             },
             {
-            "$limit": 1
+                "$limit": 1
             }
         ])
 
@@ -128,6 +136,34 @@ class TCBot:
             return None
 
 
+    def get_message_to_post(self, pair_to_post):
+        total_volume = pair_to_post['total_volume']
+
+        markets = pair_to_post['markets']
+        markets = sort_dict(markets, by_key=False, reverse=True)
+
+        message_to_post = f"Top Market Venues for {pair_to_post['_id']}"
+
+        for name, volume in markets.items():
+            market = name.capitalize()
+            percentage = get_percentage(volume, total_volume)
+            message_to_post += f"\n{market} {percentage}%"
+
+        return message_to_post
+
+
+    def post_tweet(self, message: str):
+        logger.debug("Posting the following message:")
+
+        for line in message.splitlines():
+            logger.debug("\t\033[3m{}\033[0m", line)
+
+        thread_id = get_timestamp()
+        logger.debug("Posted to {}", thread_id)
+
+        return thread_id
+
+
     def start(self):
         logger.info("TCBot has started!")
 
@@ -135,6 +171,8 @@ class TCBot:
 
         if pair_to_post:
             logger.info("The pair '{}' needs to be posted!", pair_to_post['_id'])
+            message_to_post = self.get_message_to_post(pair_to_post)
+            thread_id = self.post_tweet(message_to_post)
         else:
             logger.info("No pair to post found :(")
 
