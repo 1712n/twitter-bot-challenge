@@ -117,6 +117,7 @@ class MarketCapBot:
             post_document['tweet_id'] = tweet_id
         self.posts_db.insert_one(post_document)
 
+    @mongodb_read_error_handler
     def post_message(self,pair:str=None,message:str=None) -> None:
         """
             Method to post a message to twitter
