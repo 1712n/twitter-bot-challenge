@@ -1,5 +1,6 @@
 import datetime
 import logging
+from typing import Dict
 
 import db
 import pymongo
@@ -38,7 +39,7 @@ class MarketCapBot:
         return pair_to_post
         
     @mongodb_read_error_handler
-    def _get_message_dict(self,pair:str=None,pair_symbol:str=None,pair_base:str=None) -> dict:
+    def _get_message_dict(self,pair:str=None,pair_symbol:str=None,pair_base:str=None) -> Dict:
         """
             Method to return a dictionary of marketVenue:volume percentage for a given pair
         """

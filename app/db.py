@@ -40,7 +40,7 @@ def mongodb_read_error_handler(func):
         try:
             return func(*args,**kwargs)
         except pymongo.errors.PyMongoError as e:
-            logging.error("Error reading from MongoDB in %s: %s" %(func.__name__,e))
+            logging.error("Error reading from MongoDB in %s:\n %s" %(func.__name__,e))
             sys.exit(1)
         except Exception as e:
             logging.error("Error in %s :\n %s" %(func.__name__,e))
@@ -55,7 +55,7 @@ def mongodb_write_error_handler(func):
         try:
             return func(*args,**kwargs)
         except pymongo.errors.PyMongoError as e:
-            logging.error("Error writing to MongoDB in %s: %s" %(func.__name__,e))
+            logging.error("Error writing to MongoDB in %s:\n %s" %(func.__name__,e))
             sys.exit(1)
         except Exception as e:
             logging.error("Error in %s :\n %s" %(func.__name__,e))
