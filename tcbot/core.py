@@ -11,15 +11,14 @@ class TCBot:
         self,
         mongodb_client: MongoClient,
         twitter_client: TwitterClient,
-        db_name = "metrics"
+        db_name="metrics"
     ):
         logger.debug("Initializing TCBot...")
 
         self.database = mongodb_client.get_database(db_name)
         self.twitter_client = twitter_client
 
-
-    def get_pair_to_post(self, granularity = '1h'):
+    def get_pair_to_post(self, granularity='1h'):
         logger.debug("Using database '{}'...", self.database.name)
 
         logger.debug("Getting pair to post through aggregation pipelines...")
@@ -141,7 +140,6 @@ class TCBot:
 
         return None
 
-
     def get_message_to_post(self, pair_to_post):
         total_volume = pair_to_post['total_volume']
 
@@ -157,7 +155,6 @@ class TCBot:
 
         return message_to_post
 
-
     def save_post_to_db(self, pair, tweet_id, message):
         logger.info("Saving message to 'posts_db'...")
 
@@ -170,8 +167,7 @@ class TCBot:
 
         logger.info("Message saved to 'posts_db' successfully!")
 
-
-    def post_tweet(self, message: str, thread_id = None):
+    def post_tweet(self, message: str, thread_id=None):
         logger.debug("Posting the following message:")
 
         for line in message.splitlines():
@@ -186,7 +182,6 @@ class TCBot:
         logger.info("The message has been posted to Twitter: {}", tweet_id)
 
         return tweet_id
-
 
     def start(self):
         logger.info("TCBot has started!")
