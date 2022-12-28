@@ -139,6 +139,8 @@ class MarketCapBot:
                     text=message,
                     in_reply_to_tweet_id=pair_main_post['tweet_id']
                     )
+        except tweepy.Forbidden:
+            logging.warning("A tweet with the same text has already been posted")
         except tweepy.TweepyException as e:
             logging.error("%s"%e)
 
