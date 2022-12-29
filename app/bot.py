@@ -127,20 +127,21 @@ class MarketCapBot:
         if message is None:
             message = self.compose_message(pair=pair)
 
-        pair_main_post = self.posts_db.find_one({'pair':pair,'tweet_id':{'$exists':True}})
+        pair_main_post = self.posts_db.find({'pair':pair,'tweet_id':{'$exists':True}}).sort('time',pymongo.DESCENDING).limit(1)
         tweet_id = None
         try:
             logging.info("Posting message...")
             if pair_main_post is None:
                 response = self.twitter_client.create_tweet(text=message)
-                tweet_id = response.data.get('id')
+                
             else:
-                self.twitter_client.create_tweet(
+                response = self.twitter_client.create_tweet(
                     text=message,
                     in_reply_to_tweet_id=pair_main_post['tweet_id']
                     )
+            tweet_id = response.data.get('id')
         except tweepy.Forbidden:
-            logging.warning("A tweet with the same text has already been posted")
+            logging.warning("A tweet with the same text has already been posted to this thread")
         except tweepy.TweepyException as e:
             logging.error("%s"%e)
 
@@ -149,10 +150,7 @@ class MarketCapBot:
 
         else:
             logging.info("Message posted!")
-            if tweet_id:
-                self._save_message_to_db(pair=pair,tweet_id=tweet_id,message=message)
-            else:
-                self._save_message_to_db(pair=pair,message=message)
+            self._save_message_to_db(pair=pair,tweet_id=tweet_id,message=message)
             return
 
         logging.info("Message not posted!")

@@ -5,10 +5,11 @@ from typing import Iterable, List, Set
 import config
 import pymongo
 
+log_format = '%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 if config.DEBUG:
-    logging.basicConfig(level=logging.DEBUG)
+    logging.basicConfig(level=logging.DEBUG,format=log_format)
 else:
-    logging.basicConfig(level=logging.INFO)
+    logging.basicConfig(level=logging.INFO,format=log_format)
     
 # Connect to MongoDB
 mongo_user = config.MONGODB_USER
