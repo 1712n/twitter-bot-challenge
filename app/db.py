@@ -1,5 +1,6 @@
 import logging
 import sys
+from datetime import datetime, timedelta
 from typing import Iterable, List, Set
 
 import config
@@ -65,25 +66,34 @@ def mongodb_write_error_handler(func):
 
 
 @mongodb_read_error_handler
-def get_top_pairs(max_num:int=100) -> List:
+def get_top_pairs(max_num:int=100,last_hours:int=1) -> List:
     """
-        Function to return at most the top max_num distinct pairs by compound volume from ohlcv db
+        Function to return at most the top max_num distinct pairs by compound volume from ohlcv db in the last last_hours
     """
     logging.info("Getting top pairs by volume...")
-    ohlcv_documents = ohlcv_db.find({},{'_id':False}).sort('volume', pymongo.DESCENDING)
+    ohlcv_documents = ohlcv_db.aggregate(
+            [
+                {
+                    "$match": {
+                        "timestamp": {
+                            "$gte": datetime.utcnow() - timedelta(hours=last_hours)
+                        },
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
+                        "volume_sum": {"$sum": {"$toDouble": "$volume"}},
+                    }
+                },
 
-    top_100_pairs_by_volume_set = set()
-    top_100_pairs_by_volume = list()
-    for item in ohlcv_documents:
+                {"$sort": {"volume_sum": pymongo.DESCENDING}},
+                {"$limit": max_num},
+            ],
+        )
+    top_pairs_by_volume = map(lambda x: str.upper(x['_id']),ohlcv_documents)
 
-        pair = f"{item['pair_symbol'].upper()}-{item['pair_base'].upper()}"
-        if pair not in top_100_pairs_by_volume_set:
-            top_100_pairs_by_volume_set.add(pair)
-            top_100_pairs_by_volume.append(pair)
-            
-        if len(top_100_pairs_by_volume) == max_num:
-            break
-    return top_100_pairs_by_volume
+    return top_pairs_by_volume
 
 
 @mongodb_read_error_handler
@@ -94,11 +104,12 @@ def get_latest_posted_pairs(top_pairs:List,max_num:int=5) -> Set:
     posted_pairs_among_top = posts_db.find({'pair' : {'$in':top_pairs}}).sort('time', pymongo.DESCENDING).distinct('pair')
 
     latest_posted_pairs_set = set()
-
+    latest_posted_pair = list()
     # At most top max_num distinct latest posted pairs among top pairs
     for pair in posted_pairs_among_top:
         if pair not in latest_posted_pairs_set:
             latest_posted_pairs_set.add(pair)
+            latest_posted_pair.append(pair)
         if len(latest_posted_pairs_set) == max_num:
             break
     return latest_posted_pairs_set
@@ -112,7 +123,7 @@ def get_latest_posted_pair() -> str:
     document = posts_db.find({}).sort('time', pymongo.DESCENDING).limit(1)
     return document[0].get('pair')
 
-def get_pair_to_post(top_pairs:List,latest_posted_pairs:Iterable = None) -> str:
+def get_pair_to_post(top_pairs:List,last_posted:str=None,latest_posted_pairs:Iterable = None) -> str:
     """
         Function to return the pair to post
     """
@@ -120,19 +131,19 @@ def get_pair_to_post(top_pairs:List,latest_posted_pairs:Iterable = None) -> str:
     if (latest_posted_pairs is None) or len(latest_posted_pairs) == 0:
         # the first pair by volume
         return top_pairs[0]
-
-    last_posted = get_latest_posted_pair()
+    if last_posted is None:
+        last_posted = get_latest_posted_pair()
     for pair in top_pairs:
         if pair in latest_posted_pairs and not pair == last_posted:
             # Choose the first pair by volume among those latest posted pairs
             return pair
     else:
-        # Or the first pair by volume
-        return top_pairs[0]
+        # Or the oldest posted amoung top pairs
+        return latest_posted_pairs[-1]
 if __name__ == "__main__":
 
     top = ['A','B','C']
     assert('A' == get_pair_to_post(top,latest_posted_pairs={}))
-    assert('B' == get_pair_to_post(top,latest_posted_pairs={'B'}))
+    assert('C' == get_pair_to_post(top,last_posted = 'A',latest_posted_pairs=['A','C']))
     print(ohlcv_db.count_documents({}))
     print(posts_db.count_documents({}))
