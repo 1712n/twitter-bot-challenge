@@ -1,4 +1,4 @@
-from config2 import client
+from config import client
 
 # get database and collections
 dbname = client['metrics']
