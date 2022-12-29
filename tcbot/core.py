@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from pymongo import MongoClient
 from tweepy import Client as TwitterClient
 
@@ -18,14 +18,20 @@ class TCBot:
         self.database = mongodb_client.get_database(db_name)
         self.twitter_client = twitter_client
 
-    def get_pair_to_post(self, granularity='1h'):
+    def get_pair_to_post(self, granularity='1h', last_n_days=1):
         logger.debug("Using database '{}'...", self.database.name)
+
+        from_timestamp = datetime.utcnow() - timedelta(days=last_n_days)
+        logger.debug("Using data from last {} day(s)...", last_n_days)
 
         logger.debug("Getting pair to post through aggregation pipelines...")
         result = self.database.ohlcv_db.aggregate([
             {
                 "$match": {
-                    "granularity": granularity
+                    "granularity": granularity,
+                    "timestamp": {
+                        "$gte": from_timestamp
+                    }
                 }
             },
             {
