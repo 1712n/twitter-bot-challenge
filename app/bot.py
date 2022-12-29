@@ -137,7 +137,7 @@ class MarketCapBot:
             else:
                 response = self.twitter_client.create_tweet(
                     text=message,
-                    in_reply_to_tweet_id=pair_main_post['tweet_id']
+                    in_reply_to_tweet_id=pair_main_post[0]['tweet_id']
                     )
             tweet_id = response.data.get('id')
         except tweepy.Forbidden:
