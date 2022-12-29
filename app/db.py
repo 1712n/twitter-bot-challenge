@@ -91,7 +91,7 @@ def get_top_pairs(max_num:int=100,last_hours:int=1) -> List:
                 {"$limit": max_num},
             ],
         )
-    top_pairs_by_volume = map(lambda x: str.upper(x['_id']),ohlcv_documents)
+    top_pairs_by_volume = [x['_id'].upper() for x in ohlcv_documents]
 
     return top_pairs_by_volume
 
