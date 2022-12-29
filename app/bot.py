@@ -131,14 +131,14 @@ class MarketCapBot:
         tweet_id = None
         try:
             logging.info("Posting message...")
-            if pair_main_post is None:
-                response = self.twitter_client.create_tweet(text=message)
-                
-            else:
+            if list(pair_main_post.clone()):
                 response = self.twitter_client.create_tweet(
                     text=message,
                     in_reply_to_tweet_id=pair_main_post[0]['tweet_id']
                     )
+            else:
+                response = self.twitter_client.create_tweet(text=message)
+                
             tweet_id = response.data.get('id')
         except tweepy.Forbidden:
             logging.warning("A tweet with the same text has already been posted to this thread")
@@ -146,7 +146,7 @@ class MarketCapBot:
             logging.error("%s"%e)
 
         except Exception as e:
-            logging.error("Error posting message %s"%e)
+            logging.error("Error posting message: %s"%e)
 
         else:
             logging.info("Message posted!")
