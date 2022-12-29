@@ -153,11 +153,19 @@ class TCBot:
         markets = sort_dict(markets, by_key=False, reverse=True)
 
         message_to_post = f"Top Market Venues for {pair_to_post['_id']}"
+        others_percentage = 0
 
-        for name, volume in markets.items():
-            market = name.capitalize()
+        for index, (name, volume) in enumerate(markets.items()):
             percentage = get_percentage(volume, total_volume)
-            message_to_post += f"\n{market} {percentage}%"
+
+            if index >= 5:
+                others_percentage += percentage
+            else:
+                market = name.capitalize()
+                message_to_post += f"\n{market} {percentage:.2f}%"
+
+        if others_percentage > 0:
+            message_to_post += f"\nOthers {others_percentage:.2f}%"
 
         return message_to_post
 
