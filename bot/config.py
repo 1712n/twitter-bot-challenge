@@ -1,7 +1,7 @@
 import os
 from pymongo import MongoClient
 
-bearer_token = os.environ["TW_BEARER_TOKEN"]
+#bearer_token = os.environ["TW_BEARER_TOKEN"]
 
 user = os.environ["MONGODB_USER"]
 password = os.environ["MONGODB_PASSWORD"]
