@@ -18,135 +18,133 @@ class TCBot:
         self.database = mongodb_client.get_database(db_name)
         self.twitter_client = twitter_client
 
-    def get_pair_to_post(self, granularity='1h', last_n_days=1):
+    def get_pair_to_post(self, granularity="1h", last_n_days=1) -> (dict | None):
         logger.debug("Using database '{}'...", self.database.name)
 
         from_timestamp = datetime.utcnow() - timedelta(days=last_n_days)
         logger.debug("Using data from last {} day(s)...", last_n_days)
 
-        logger.debug("Getting pair to post through aggregation pipelines...")
-        result = self.database.ohlcv_db.aggregate([
-            {
-                "$match": {
-                    "granularity": granularity,
-                    "timestamp": {
-                        "$gte": from_timestamp
-                    }
-                }
-            },
-            {
-                "$group": {
-                    "_id": {
-                        "pair_symbol": "$pair_symbol",
-                        "pair_base": "$pair_base",
-                        "market_venue": "$marketVenue"
-                    },
-                    "total_volume": {
-                        "$sum": {
-                            "$toDouble": "$volume"
+        try:
+            logger.debug("Getting pair to post through aggregation pipelines...")
+            result = self.database.ohlcv_db.aggregate([
+                {
+                    "$match": {
+                        "granularity": granularity,
+                        "timestamp": {
+                            "$gte": from_timestamp
                         }
                     }
-                }
-            },
-            {
-                "$group": {
-                    "_id": {
-                        "$concat": [
-                            "$_id.pair_symbol",
-                            "-",
-                            "$_id.pair_base"
-                        ]
-                    },
-                    "total_volume": {
-                        "$sum": "$total_volume"
-                    },
-                    "markets": {
-                        "$push": {
-                            "k": "$_id.market_venue",
-                            "v": "$total_volume"
+                },
+                {
+                    "$group": {
+                        "_id": {
+                            "pair_symbol": "$pair_symbol",
+                            "pair_base": "$pair_base",
+                            "market_venue": "$marketVenue"
+                        },
+                        "total_volume": {
+                            "$sum": {
+                                "$toDouble": "$volume"
+                            }
                         }
                     }
-                }
-            },
-            {
-                "$project": {
-                    "total_volume": 1,
-                    "markets": {
-                        "$arrayToObject": "$markets"
+                },
+                {
+                    "$group": {
+                        "_id": {
+                            "$concat": [ "$_id.pair_symbol", "-", "$_id.pair_base" ]
+                        },
+                        "total_volume": {
+                            "$sum": "$total_volume"
+                        },
+                        "markets": {
+                            "$push": {
+                                "k": "$_id.market_venue",
+                                "v": "$total_volume"
+                            }
+                        }
                     }
-                }
-            },
-            {
-                "$sort": {
-                    "total_volume": -1
-                }
-            },
-            {
-                "$limit": 100
-            },
-            {
-                "$addFields": {
-                    "_id": {
-                        "$toUpper": "$_id"
+                },
+                {
+                    "$project": {
+                        "total_volume": 1,
+                        "markets": {
+                            "$arrayToObject": "$markets"
+                        }
                     }
-                }
-            },
-            {
-                "$lookup": {
-                    "from": "posts_db",
-                    "localField": "_id",
-                    "foreignField": "pair",
-                    "let": {
-                        "pair": "$_id"
-                    },
-                    "pipeline": [
-                        {
-                            "$match": {
-                                "$expr": {
-                                    "$eq": [
-                                        "$pair",
-                                        "$$pair"
-                                    ]
+                },
+                {
+                    "$sort": {
+                        "total_volume": -1
+                    }
+                },
+                {
+                    "$limit": 100
+                },
+                {
+                    "$addFields": {
+                        "_id": {
+                            "$toUpper": "$_id"
+                        }
+                    }
+                },
+                {
+                    "$lookup": {
+                        "from": "posts_db",
+                        "localField": "_id",
+                        "foreignField": "pair",
+                        "let": {
+                            "pair": "$_id"
+                        },
+                        "pipeline": [
+                            {
+                                "$match": {
+                                    "$expr": {
+                                        "$eq": [ "$pair", "$$pair" ]
+                                    }
                                 }
+                            },
+                            {
+                                "$sort": {
+                                    "timestamp": -1
+                                }
+                            },
+                            {
+                                "$limit": 1
                             }
-                        },
-                        {
-                            "$sort": {
-                                "timestamp": -1
-                            }
-                        },
-                        {
-                            "$limit": 1
-                        }
-                    ],
-                    "as": "last_post"
+                        ],
+                        "as": "last_post"
+                    }
+                },
+                {
+                    "$unwind": {
+                        "path": "$last_post",
+                        "preserveNullAndEmptyArrays": True
+                    }
+                },
+                {
+                    "$sort": {
+                        "last_post.timestamp": 1,
+                        "total_volume": -1
+                    }
+                },
+                {
+                    "$limit": 1
                 }
-            },
-            {
-                "$unwind": {
-                    "path": "$last_post",
-                    "preserveNullAndEmptyArrays": True
-                }
-            },
-            {
-                "$sort": {
-                    "last_post.timestamp": 1,
-                    "total_volume": -1
-                }
-            },
-            {
-                "$limit": 1
-            }
-        ])
+            ])
 
-        result = list(result)
+            result = list(result)
 
-        if len(result) > 0:
-            return result[0]
+            if len(result) > 0:
+                return result[0]
+            else:
+                return None
 
-        return None
+        except Exception as err:
+            logger.error("Could not get pair to post: \033[3m{}\033[0m", str(err))
+            return None
 
-    def get_message_to_post(self, pair_to_post):
+    def get_message_to_post(self, pair_to_post: dict) -> str:
         total_volume = pair_to_post['total_volume']
 
         markets = pair_to_post['markets']
@@ -169,33 +167,44 @@ class TCBot:
 
         return message_to_post
 
-    def save_post_to_db(self, pair, tweet_id, message):
-        logger.info("Saving message to 'posts_db'...")
-
-        self.database.posts_db.insert_one({
-            'pair': pair,
-            'message': message,
-            'tweet_id': tweet_id,
-            'timestamp': datetime.utcnow()
-        })
-
-        logger.info("Message saved to 'posts_db' successfully!")
-
-    def post_tweet(self, message: str, thread_id=None):
+    def post_tweet(self, message: str, thread_id=None) -> (str | None):
         logger.debug("Posting the following message:")
 
         for line in message.splitlines():
             logger.debug("\t\033[3m{}\033[0m", line)
 
-        response = self.twitter_client.create_tweet(
-            text=message,
-            in_reply_to_tweet_id=thread_id
-        )
+        if thread_id is not None:
+            logger.debug("Message will be posted under the following thread '{}'.", thread_id)
 
-        tweet_id = response.data['id']
-        logger.info("The message has been posted to Twitter: {}", tweet_id)
+        try:
+            response = self.twitter_client.create_tweet(
+                text=message,
+                in_reply_to_tweet_id=thread_id
+            )
 
-        return tweet_id
+            tweet_id = response.data['id']
+            logger.info("The message has been posted to Twitter. Tweet ID: '{}'", tweet_id)
+            return tweet_id
+
+        except Exception as err:
+            logger.error("The message could not be posted to Twitter: \033[3m{}\033[0m", str(err))
+            return None
+
+    def save_post_to_db(self, pair: str, tweet_id: str | None, message: str):
+        logger.info("Saving message to 'posts_db'...")
+
+        try:
+            self.database.posts_db.insert_one({
+                'pair': pair,
+                'message': message,
+                'tweet_id': tweet_id,
+                'timestamp': datetime.utcnow()
+            })
+
+            logger.info("Message saved to 'posts_db' successfully!")
+
+        except Exception as err:
+            logger.error("Message could not be saved to 'posts_db': \033[3m{}\033[0m", str(err))
 
     def start(self):
         logger.info("TCBot has started!")
@@ -204,15 +213,16 @@ class TCBot:
 
         if pair_to_post:
             pair = pair_to_post['_id']
-            thread_id = pair_to_post.get('last_post', {}).get('tweet_id')
-
             logger.info("The pair '{}' needs to be posted!", pair)
 
             message_to_post = self.get_message_to_post(pair_to_post)
+            thread_id = pair_to_post.get('last_post', {}).get('tweet_id')
+
             tweet_id = self.post_tweet(
                 message=message_to_post,
                 thread_id=thread_id
             )
+
             self.save_post_to_db(
                 pair=pair,
                 tweet_id=tweet_id,
