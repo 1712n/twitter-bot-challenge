@@ -94,9 +94,12 @@ class MarketCapBot:
         
         logging.info("Composing message...")  
         message = f"Top Market Venues for {pair}:\n"
+        other_percentage = message_dict.pop('others')
         for marketVenue,percentage in sorted(message_dict.items(),key=lambda x:x[1],reverse=True):
             if percentage != 0:
                 message += f"{marketVenue.capitalize()}: {percentage}%\n"
+        if other_percentage != 0:
+            message += f"Others: {other_percentage}%\n"
         logging.info("Message composed!")
         return message
 
