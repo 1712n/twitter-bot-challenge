@@ -10,11 +10,23 @@ client = pymongo.MongoClient(uri)
 
 if __name__ == '__main__':
     select_1h_granularity = {"$match": {"granularity": "1h"}}
+    limit_data = {
+        "$group": {
+            "_id": {
+                "pair": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
+                "marketVenue": "$marketVenue"
+            },
+            "volume": {
+                "$sum": {"$toDouble": "$volume"}
+            }
+        }
+    }
     debug_limit = {"$limit": 100}
 
 
     res = client["metrics"]["ohlcv_db"].aggregate([
         select_1h_granularity,
+        limit_data,
         debug_limit
     ])
 
