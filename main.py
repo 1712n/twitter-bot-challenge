@@ -67,3 +67,16 @@ if __name__ == '__main__':
 
     latest_pairs = [(x["_id"], x["time"]) for x in res]
 
+    #################### Selecting pair_to_post
+
+    # The instructions are unclear, the exact algorithm to choose the pair to post is not given
+    # So I'm just going to pick the biggest pair by volume that's in latest_pairs
+
+    latest_pairs_ids = [x[0] for x in latest_pairs]
+    pair_to_post = None
+    for (pair, volume) in top_pairs:
+        if pair in latest_pairs_ids:
+            pair_to_post = (pair, volume)
+            break
+
+    
