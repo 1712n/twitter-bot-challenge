@@ -153,7 +153,7 @@ def post_message_to_twitter(db, pair, message):
 
     parent = list(parent)
 
-    input("press to continue...") # to work around a problem with Twitter being blocked in my country
+    # input("press to continue...") # to work around a problem with Twitter being blocked in my country
 
     if len(parent) == 0:
         Twitter().post_new_tweet(message)
