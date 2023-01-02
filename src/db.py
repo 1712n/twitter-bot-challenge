@@ -18,109 +18,112 @@ except Exception:
     raise
 
 
-def get_top_pairs_by_volume(limit: int = 100):
-    top_pairs_by_volume = db.ohlcv_db.aggregate(
+def get_top_pairs_by_volume(limit: int = 100, extra_condition={}):
+    query_result = db.ohlcv_db.aggregate(
         [
             {
                 "$group": {
                     "_id": {
-                        "$toUpper": {
-                            "$concat": ["$pair_symbol", "-", "$pair_base"]
-                        }
+                        "$toUpper": {"$concat": [
+                            "$pair_symbol", "-", "$pair_base"
+                        ]}
                     },
                     "compound_volume": {
                         "$sum": {
                             "$convert": {
                                 "input": "$volume",
                                 "to": "double",
-                                "onError": "Cannot convert input to double",
+                                "onError": "Cannot convert to double",
                                 "onNull": "Input was null or empty",
                             }
                         }
                     },
                 }
             },
+            {"$match": extra_condition},
             {"$sort": {"compound_volume": -1}},
             {"$limit": limit},
         ],
     )
-    top_pairs_list = [pair["_id"] for pair in top_pairs_by_volume]
-    return top_pairs_list
+    pairs_w_top_volume = [pair["_id"] for pair in query_result]
+    return pairs_w_top_volume
 
 
-def get_pair_to_post(top_pairs: List):
-    pair_to_post = list(db.posts_db.aggregate(
+def get_pair_to_post(pairs: List):
+    query_result = db.posts_db.aggregate(
         [
-            {"$match": {"pair": {"$in": top_pairs}}},
+            {"$match": {"pair": {"$in": pairs}}},
             {
                 "$project": {
                     "pair": 1,
-                    "timestamp": {
-                        "$ifNull": ["$time", "$timestamp"]
-                    }
+                    "timestamp": {"$ifNull": ["$time", "$timestamp"]},
                 }
             },
             {
                 "$group": {
                     "_id": "$pair",
-                    "latest post": {
-                        "$min": "$timestamp"
-                    }
+                    "latest post": {"$min": "$timestamp"}
                 }
             },
             {"$sort": {"latest post": 1}},
-            {"$limit": 1}
+            {"$limit": 5},
         ]
-    ))[0]
-    return pair_to_post["_id"]
+    )
+    pairs_w_oldest_timetamp = [pair["_id"] for pair in query_result]
+    max_volume_among_oldest = get_top_pairs_by_volume(
+        limit=1, extra_condition={"_id": {"$in": pairs_w_oldest_timetamp}}
+    )
+    pair_to_post = max_volume_among_oldest[0]
+    return pair_to_post
 
 
-def get_message_to_post(pair_to_post: str):
-    pair_markets = list(db.ohlcv_db.aggregate(
-        [
-            {
-                "$project": {
-                    "pair": {
-                        "$toUpper": {
-                            "$concat": ["$pair_symbol", "-", "$pair_base"]
-                        }
-                    },
-                    "marketVenue": 1,
-                    "volume": 1
-                }
-            },
-            {"$match": {"pair": pair_to_post}},
-            {
-                "$group": {
-                    "_id": "$marketVenue",
-                    "volume": {
-                        "$sum": {
-                            "$convert": {
-                                "input": "$volume",
-                                "to": "double",
-                                "onError": "Cannot convert input to double",
-                                "onNull": "Input was null or empty",
+def get_message_to_post(pair: str):
+    pair_markets = list(
+        db.ohlcv_db.aggregate(
+            [
+                {
+                    "$project": {
+                        "pair": {
+                            "$toUpper": {
+                                "$concat": ["$pair_symbol", "-", "$pair_base"]
                             }
-                        }
+                        },
+                        "marketVenue": 1,
+                        "volume": 1,
                     }
-                }
-            },
-            {"$sort": {"volume": -1}}
-        ]
-    ))
-    message_to_post = f"Top Market Venues for {pair_to_post}:\n"
-    pair_compound_volume = sum(m["volume"] for m in pair_markets)
-    for i, market in enumerate(pair_markets):
+                },
+                {"$match": {"pair": pair}},
+                {
+                    "$group": {
+                        "_id": "$marketVenue",
+                        "volume": {
+                            "$sum": {
+                                "$convert": {
+                                    "input": "$volume",
+                                    "to": "double",
+                                    "onError": "Cannot convert to double",
+                                    "onNull": "Input was null or empty",
+                                }
+                            }
+                        },
+                    }
+                },
+                {"$sort": {"volume": -1}},
+            ]
+        )
+    )
+    message_components = [f"Top Market Venues for {pair}:", ]
+    cmpd_volume = sum(market["volume"] for market in pair_markets)
+    for i, mkt in enumerate(pair_markets):
         if i == 5:
             break
-        message_to_post += f"{market['_id'].capitalize()} {(market['volume']/pair_compound_volume)*100:.2f}%\n"
+        message_components.append(
+            f"{mkt['_id'].capitalize()} {(mkt['volume']/cmpd_volume)*100:.2f}%"
+        )
     if len(pair_markets) > 5:
-        other_markets_volume = sum(m["volume"] for m in pair_markets[5:])
-        message_to_post += f"Others {(other_markets_volume/pair_compound_volume)*100:.2f}%\n"
+        other_markets_volume = sum(mkt["volume"] for mkt in pair_markets[5:])
+        message_components.append(
+            f"Others {(other_markets_volume/cmpd_volume)*100:.2f}%"
+        )
+    message_to_post = "\n".join(message_components)
     return message_to_post
-
-
-top_pairs = get_top_pairs_by_volume()
-pair_to_post = get_pair_to_post(top_pairs)
-message = get_message_to_post(pair_to_post)
-print(message)
