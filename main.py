@@ -8,7 +8,7 @@ import logging
 from database import Database
 from twitter import Twitter
 
-use_twitter = True  # change to True if you want the tweet to be actually posted
+use_twitter = False  # change to True if you want the tweet to be actually posted
 
 
 def get_top_pairs(db):
