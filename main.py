@@ -1,5 +1,6 @@
 import pymongo
 import os
+import datetime
 
 user = os.environ["MONGODB_USER"]
 password = os.environ["MONGODB_PASSWORD"]
@@ -135,3 +136,13 @@ if __name__ == '__main__':
     percentage = str(round(others*100, 1))
     response += f"Others: {percentage}%"
     print(response)
+
+    ############ adding the tweet to posts
+
+    post = {
+        "pair":pair,
+        "tweet_text":response,
+        "time":datetime.datetime.fromisoformat(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+    }
+    client["metrics"]["posts_db"].insert_one(post)
+
