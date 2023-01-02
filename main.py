@@ -153,24 +153,28 @@ if __name__ == '__main__':
 
     ##### posting the tweet
 
-    twitter = tweepy.Client(
-        consumer_key=consumer_key,
-        consumer_secret=consumer_secret,
-        access_token=access_token,
-        access_token_secret=access_token_secret,
-    )
+    use_twitter = True
 
-    parent = client["metrics"]["posts_db"].find({
-        'pair':pair,
-        'tweet_id': {
-            '$exists': True
-        }
-    })\
-        .sort('time',pymongo.DESCENDING)\
-        .limit(1)
-    parent = list(parent)
-    print(parent[0])
-    if parent is []:
-        twitter.create_tweet(text=response)
-    else:
-        twitter.create_tweet(text=response, in_reply_to_tweet_id=parent[0]["tweet_id"])
+    if use_twitter:
+        twitter = tweepy.Client(
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret,
+        )
+
+        parent = client["metrics"]["posts_db"].find({
+            'pair':pair,
+            'tweet_id': {
+                '$exists': True
+            }
+        })\
+            .sort('time',pymongo.DESCENDING)\
+            .limit(1)
+        parent = list(parent)
+        print(parent[0])
+        #input("press to continue...") ## to work around a problem with Twitter being blocked in my country
+        if parent is []:
+            twitter.create_tweet(text=response)
+        else:
+            twitter.create_tweet(text=response, in_reply_to_tweet_id=parent[0]["tweet_id"])
