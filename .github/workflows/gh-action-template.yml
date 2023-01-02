@@ -21,6 +21,7 @@ jobs:
           python -m pip install --upgrade pip
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
           pip install pymongo
+          pip install tweepy
 
       - name: Execute python script
         env: # Or as an environment variable

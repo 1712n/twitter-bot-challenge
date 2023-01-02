@@ -133,7 +133,7 @@ if __name__ == '__main__':
     others = 1.0 - sum([x[1] for x in percentages])
     #print(percentages)
     #print(others)
-    response = "Top Market Venues for pair:\n"
+    response = f"Top Market Venues for {pair}:\n"
     for (market, value) in percentages:
         percentage = str(round(value*100, 1))
         venue = market.capitalize()
