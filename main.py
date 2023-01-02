@@ -14,20 +14,26 @@ if __name__ == '__main__':
         "$group": {
             "_id": {
                 "pair": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
-                "marketVenue": "$marketVenue"
+                #"marketVenue": "$marketVenue"
             },
             "volume": {
                 "$sum": {"$toDouble": "$volume"}
             }
         }
     }
-    debug_limit = {"$limit": 100}
+    sort_data = {
+        "$sort": {
+            "volume": pymongo.DESCENDING
+        }
+    }
+    top_100 = {"$limit": 100}
 
 
     res = client["metrics"]["ohlcv_db"].aggregate([
         select_1h_granularity,
         limit_data,
-        debug_limit
+        sort_data,
+        top_100
     ])
 
     for x in res:
