@@ -11,7 +11,7 @@ client = pymongo.MongoClient(uri)
 if __name__ == '__main__':
     ############### part 1 of the algorithm
 
-    select_1h_granularity = {"$match": {"granularity": "1h"}}
+    select_granularity = {"$match": {"granularity": "1h"}}
     limit_data = {
         "$group": {
             "_id": {
@@ -30,7 +30,7 @@ if __name__ == '__main__':
     top_100 = {"$limit": 100}
 
     res = client["metrics"]["ohlcv_db"].aggregate([
-        select_1h_granularity,
+        select_granularity,
         limit_data,
         sort_data,
         top_100
@@ -79,4 +79,59 @@ if __name__ == '__main__':
             pair_to_post = (pair, volume)
             break
 
-    
+    # print(pair_to_post)
+
+    ############### Composing message
+
+    pair = pair_to_post[0]
+    symbol = pair.split('-')[0].lower()
+    base = pair.split('-')[1].lower()
+
+    find_the_pair = {
+        "$match": {
+            "pair_symbol":symbol,
+            "pair_base":base
+        }
+    }
+    sort_by_timestamp = {
+        "$sort": {
+                "timestamp": pymongo.DESCENDING
+        }
+
+    }
+
+    tickers = client["metrics"]["ohlcv_db"].aggregate([
+        select_granularity,
+        find_the_pair,
+        sort_by_timestamp
+    ])
+    first_item = next(tickers)
+    current_date = first_item["timestamp"]
+    market_venues = {
+        first_item["marketVenue"]: float(first_item["volume"])
+    }
+    for x in tickers:
+        if x["timestamp"] == current_date:
+            venue = x["marketVenue"]
+            volume = x["volume"]
+            if venue in market_venues.keys():
+                market_venues[venue] += float(volume)
+            else:
+                market_venues[venue] = float(volume)
+        else:
+            break
+
+    total_volume = sum(market_venues.values())
+    items = sorted(market_venues.items(), key=lambda x: x[1], reverse=True)[:5]
+    percentages = [(key, (value/total_volume)) for (key, value) in items]
+    others = 1.0 - sum([x[1] for x in percentages])
+    #print(percentages)
+    #print(others)
+    response = "Top Market Venues for pair:\n"
+    for (market, value) in percentages:
+        percentage = str(round(value*100, 1))
+        venue = market.capitalize()
+        response += f"{venue}: {percentage}%\n"
+    percentage = str(round(others*100, 1))
+    response += f"Others: {percentage}%"
+    print(response)
