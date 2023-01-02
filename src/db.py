@@ -1,4 +1,5 @@
 import os
+import logging
 from typing import List
 from dotenv import load_dotenv
 from pymongo import MongoClient
@@ -19,6 +20,7 @@ except Exception:
 
 
 def get_top_pairs_by_volume(limit: int = 100, extra_condition={}):
+    logging.info("Getting pairs with top compound volume")
     query_result = db.ohlcv_db.aggregate(
         [
             {
@@ -46,10 +48,12 @@ def get_top_pairs_by_volume(limit: int = 100, extra_condition={}):
         ],
     )
     pairs_w_top_volume = [pair["_id"] for pair in query_result]
+    logging.info("Top pairs are collected")
     return pairs_w_top_volume
 
 
 def get_pair_to_post(pairs: List):
+    logging.info("Selecting pairs with oldest timestamp")
     query_result = db.posts_db.aggregate(
         [
             {"$match": {"pair": {"$in": pairs}}},
@@ -70,14 +74,17 @@ def get_pair_to_post(pairs: List):
         ]
     )
     pairs_w_oldest_timetamp = [pair["_id"] for pair in query_result]
+    logging.info("Selecting pair with max compound volume among them")
     max_volume_among_oldest = get_top_pairs_by_volume(
         limit=1, extra_condition={"_id": {"$in": pairs_w_oldest_timetamp}}
     )
+    logging.info("Getting a pair to post")
     pair_to_post = max_volume_among_oldest[0]
     return pair_to_post
 
 
 def get_message_to_post(pair: str):
+    logging.info("Getting coresponding market vanues for selected pair")
     pair_markets = list(
         db.ohlcv_db.aggregate(
             [
@@ -112,6 +119,7 @@ def get_message_to_post(pair: str):
             ]
         )
     )
+    logging.info("Composing message to post")
     message_components = [f"Top Market Venues for {pair}:", ]
     cmpd_volume = sum(market["volume"] for market in pair_markets)
     for i, mkt in enumerate(pair_markets):
@@ -126,4 +134,5 @@ def get_message_to_post(pair: str):
             f"Others {(other_markets_volume/cmpd_volume)*100:.2f}%"
         )
     message_to_post = "\n".join(message_components)
+    logging.info("Message is ready for posting")
     return message_to_post
