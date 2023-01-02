@@ -1,10 +1,15 @@
 import pymongo
 import os
 import datetime
+import tweepy
 
 user = os.environ["MONGODB_USER"]
 password = os.environ["MONGODB_PASSWORD"]
 address = os.environ["MONGO_DB_ADDRESS"]
+consumer_key = os.environ["TW_CONSUMER_KEY"]
+consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
+access_token = os.environ["TW_ACCESS_TOKEN"]
+access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
 
 uri = f"mongodb+srv://{user}:{password}@{address}"
 client = pymongo.MongoClient(uri)
@@ -140,9 +145,32 @@ if __name__ == '__main__':
     ############ adding the tweet to posts
 
     post = {
-        "pair":pair,
-        "tweet_text":response,
-        "time":datetime.datetime.fromisoformat(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
+        "pair": pair,
+        "tweet_text": response,
+        "time": datetime.datetime.fromisoformat(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
     }
     client["metrics"]["posts_db"].insert_one(post)
 
+    ##### posting the tweet
+
+    twitter = tweepy.Client(
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        access_token=access_token,
+        access_token_secret=access_token_secret,
+    )
+
+    parent = client["metrics"]["posts_db"].find({
+        'pair':pair,
+        'tweet_id': {
+            '$exists': True
+        }
+    })\
+        .sort('time',pymongo.DESCENDING)\
+        .limit(1)
+    parent = list(parent)
+    print(parent[0])
+    if parent is []:
+        twitter.create_tweet(text=response)
+    else:
+        twitter.create_tweet(text=response, in_reply_to_tweet_id=parent[0]["tweet_id"])
