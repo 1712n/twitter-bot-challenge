@@ -72,11 +72,14 @@ def get_latest_posts(db, top_pairs):
 def select_pair_to_post(top_pairs, latest_pairs):
     # The instructions are unclear, the exact algorithm to choose the pair to post is not given
     # So I'm just going to pick the biggest pair by volume that's in latest_pairs
+
+    # First, try to find the most voluminous pair that hasn't been posted lately
     latest_pairs_ids = [x[0] for x in latest_pairs]
     for (pair, volume) in top_pairs:
-        if pair in latest_pairs_ids:
+        if pair not in latest_pairs_ids:
             return pair, volume
-
+    # If such pair does not exist, simply post the most voluminous pair
+    return top_pairs[0]
 
 def compose_message(db, pair_to_post):
     pair = pair_to_post[0]
