@@ -33,6 +33,7 @@ def new_tweet(pair: str, text: str, origin_tweet_id: str | None):
             )
         except TweepyException as err:
             logging.error("Failed to get data from Twitter: %s", err)
+            raise
         for page in paginator.flatten():
             if pair in page.data["text"]:
                 origin_tweet_id = page.data["id"]
@@ -45,4 +46,5 @@ def new_tweet(pair: str, text: str, origin_tweet_id: str | None):
             )
     except TweepyException as err:
         logging.error("Failed to publish new tweet: %s", err)
+        raise
     return new_tweet.data["id"]

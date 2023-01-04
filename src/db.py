@@ -18,6 +18,7 @@ try:
     db = client.metrics
 except PyMongoError as err:
     logging.error("Database connection failure: %s", err)
+    raise
 
 
 def get_top_pairs_by_volume(limit: int = 100, extra_condition={}):
@@ -51,6 +52,7 @@ def get_top_pairs_by_volume(limit: int = 100, extra_condition={}):
         )
     except PyMongoError as err:
         logging.error("Faild to get data from database: %s", err)
+        raise
     pairs_w_top_volume = [pair["_id"] for pair in fetched_data]
     logging.info("Top pairs are collected")
     return pairs_w_top_volume
@@ -80,6 +82,7 @@ def get_pair_to_post(pairs: List):
         )
     except PyMongoError as err:
         logging.error("Faild to get data from database: %s", err)
+        raise
     pairs_w_oldest_timetamp = [pair["_id"] for pair in fetched_data]
     logging.info("Selecting pair with max compound volume among them")
     max_volume_among_oldest = get_top_pairs_by_volume(
@@ -131,6 +134,7 @@ def get_message_to_post(pair: str):
         )
     except PyMongoError as err:
         logging.error("Faild to get data from database: %s", err)
+        raise
     logging.info("Composing message to post")
     message_components = [f"Top Market Venues for {pair}:", ]
     cmpd_volume = sum(market["volume"] for market in fetched_data)
@@ -167,6 +171,7 @@ def get_origin_tweet_id(pair: str):
         ))
     except PyMongoError as err:
         logging.error("Faild to get data from database: %s", err)
+        raise
     origin_tweet_id = None
     if fetched_data:
         logging.info(
@@ -188,4 +193,5 @@ def add_new_post_to_db(pair: str, tweet_id: str, text: str):
         )
     except PyMongoError as err:
         logging.error("Faild to insert data in database: %s", err)
+        raise
     return inserted_document.inserted_id
