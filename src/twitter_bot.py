@@ -1,23 +1,29 @@
-import os
-import tweepy
 import logging
-from dotenv import load_dotenv
+import tweepy
+from tweepy.client import Client
 from tweepy.errors import TweepyException
 
-load_dotenv()
 
-try:
-    client = tweepy.Client(
-        consumer_key=os.environ["TW_CONSUMER_KEY"],
-        consumer_secret=os.environ["TW_CONSUMER_KEY_SECRET"],
-        access_token=os.environ["TW_ACCESS_TOKEN"],
-        access_token_secret=os.environ["TW_ACCESS_TOKEN_SECRET"]
-    )
-except TweepyException as err:
-    logging.error("Twitter connection failed: %s", err)
+def get_twitter_client(
+    consumer_key, consumer_secret, access_token, access_token_secret
+):
+    logging.info("Getting twitter client..")
+    try:
+        client = tweepy.Client(
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret
+        )
+    except TweepyException as err:
+        logging.error("Twitter connection failed: %s", err)
+    logging.info("Сonnected to Twitter!")
+    return client
 
 
-def new_tweet(pair: str, text: str, origin_tweet_id: str | None):
+def new_tweet(
+    client: Client, pair: str, text: str, origin_tweet_id: str | None
+):
     if not origin_tweet_id:
         logging.info(
             "Origin tweet id isn't specified in db. Getting from twitter.."
@@ -37,7 +43,7 @@ def new_tweet(pair: str, text: str, origin_tweet_id: str | None):
         for page in paginator.flatten():
             if pair in page.data["text"]:
                 origin_tweet_id = page.data["id"]
-                logging.info("Origin tweet id is found")
+                logging.info("Origin tweet id is found!")
                 break
     logging.info("Creating new tweet..")
     try:
