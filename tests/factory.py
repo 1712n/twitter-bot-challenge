@@ -11,7 +11,8 @@ class OhlcvFactory(factory.Factory):
 
 
 class PostFactory(factory.Factory):
-    timestamp = factory.Sequence(lambda x:(datetime.now() - timedelta(days=x)))
-    pair = Faker("pair-name")
-    tweet_text = Faker("text")
+    timestamp = factory.Sequence(
+        lambda x: (datetime.now() - timedelta(days=x))
+    )
+    pair = Faker("pair")
     tweet_id = factory.Sequence(lambda x: f"0000000{1 + x}")

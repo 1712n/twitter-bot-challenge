@@ -1,4 +1,3 @@
-import pytest
 from src.db import (
     get_top_pairs_by_volume,
     get_pair_to_post,
@@ -14,10 +13,10 @@ from .factory import (
 
 def test_get_top_pairs_by_volume(demo_db):
     demo_ohlcv_data = factory.build_batch(
-        dict, 
+        dict,
         size=6,
-        FACTORY_CLASS=OhlcvFactory, 
-        pair_base = factory.Iterator(["A", "B", "C"]),
+        FACTORY_CLASS=OhlcvFactory,
+        pair_base=factory.Iterator(["A", "B", "C"]),
     )
     demo_db.ohlcv_db.insert_many(demo_ohlcv_data)
     result = get_top_pairs_by_volume(db=demo_db)
@@ -27,16 +26,16 @@ def test_get_top_pairs_by_volume(demo_db):
 
 def test_get_pair_to_post(demo_db):
     demo_ohlcv_data = factory.build_batch(
-        dict, 
+        dict,
         size=6,
-        FACTORY_CLASS=OhlcvFactory, 
-        pair_base = factory.Iterator(["A", "B", "C"]),
+        FACTORY_CLASS=OhlcvFactory,
+        pair_base=factory.Iterator(["A", "B", "C"]),
     )
     demo_post_data = factory.build_batch(
-        dict, 
+        dict,
         size=6,
         FACTORY_CLASS=PostFactory,
-        pair = factory.Iterator(["PAIR-A", "PAIR-C", "PAIR-D", "PAIR-F"]),
+        pair=factory.Iterator(["PAIR-A", "PAIR-C", "PAIR-D", "PAIR-F"]),
     )
     demo_db.ohlcv_db.insert_many(demo_ohlcv_data)
     demo_db.posts_db.insert_many(demo_post_data)
@@ -48,11 +47,11 @@ def test_get_pair_to_post(demo_db):
 
 def test_get_message_to_post(demo_db):
     demo_ohlcv_data = factory.build_batch(
-        dict, 
+        dict,
         size=6,
-        FACTORY_CLASS=OhlcvFactory, 
-        pair_base = factory.Iterator(["A", "B", "C"]),
-        marketVenue = factory.Iterator(["market1", "market2"])
+        FACTORY_CLASS=OhlcvFactory,
+        pair_base=factory.Iterator(["A", "B", "C"]),
+        marketVenue=factory.Iterator(["market1", "market2"])
     )
     demo_db.ohlcv_db.insert_many(demo_ohlcv_data)
     selected_pair = "PAIR-C"
@@ -63,10 +62,10 @@ def test_get_message_to_post(demo_db):
 
 def test_get_origin_tweet_id(demo_db):
     demo_post_data = factory.build_batch(
-        dict, 
+        dict,
         size=6,
         FACTORY_CLASS=PostFactory,
-        pair = factory.Iterator(["PAIR-A", "PAIR-B", "PAIR-C", "PAIR-D"]),
+        pair=factory.Iterator(["PAIR-A", "PAIR-B", "PAIR-C", "PAIR-D"]),
     )
     demo_db.posts_db.insert_many(demo_post_data)
     selected_pair = "PAIR-C"

@@ -17,7 +17,7 @@ uri = f"mongodb+srv://{user}:{password}@{address}"
 def demo_client():
     client = pymongo.MongoClient(uri)
     yield client
-    
+
 
 @pytest.fixture(scope="function")
 def demo_db(demo_client):
@@ -27,4 +27,3 @@ def demo_db(demo_client):
     yield demo_db
     demo_db.drop_collection("ohlcv_db")
     demo_db.drop_collection("posts_db")
-
