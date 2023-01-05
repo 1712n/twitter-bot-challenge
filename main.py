@@ -72,6 +72,7 @@ def compose_tweet(ohlcv_db, posts_db):
     """
     try:
         top_100_pairs = ohlcv_db.find().sort("volume", pymongo.DESCENDING).limit(100)
+        print(top_100_pairs)
         top_100_pairs = [post["pairs"] for post in top_100_pairs]
     except pymongo.errors.PyMongoError as e:
         logging.error("Error querying OHLCV database: %s", e)
