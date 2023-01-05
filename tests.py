@@ -16,7 +16,7 @@ from main import (
 class TestPostTweet(unittest.TestCase):
     def setUp(self):
         self.client = MongoClient()
-        self.database = get_database("test")
+        self.database = get_database()['test']
         self.ohlcv_db = self.database.ohlcv_db
         self.posts_db = self.database.posts_db
 
@@ -49,7 +49,7 @@ class TestPostTweet(unittest.TestCase):
         self.posts_db.insert_many(self.data_posts)
 
     def tearDown(self):
-        self.client.drop_database("test")
+        self.client.drop_database["test"]
 
     def test_auxiliary_functions(self):
 
