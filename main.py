@@ -147,8 +147,6 @@ def post_tweet(ohlcv_db, posts_db):
 
 
 def get_database():
-     return mongo_client
-    load_dotenv()
     user = os.environ["MONGODB_USER"]
     password = os.environ["MONGODB_PASSWORD"]
     address = os.environ["MONGO_DB_ADDRESS"]
