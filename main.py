@@ -163,8 +163,6 @@ if __name__ == "__main__":
     mongo_client = get_database()
     ohlcv_db = mongo_client["metrics"]["ohlcv_db"]
     posts_db = mongo_client["metrics"]["posts_db"]
-    ohlcv_db = client.ohlcv_db
-    posts_db = client.posts_db
 
     
     token = os.environ["TW_ACCESS_TOKEN"]
