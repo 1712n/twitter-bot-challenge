@@ -31,6 +31,6 @@ jobs:
           # TODO: add more
           MONGODB_USER: ${{ secrets.MONGODB_USER }}
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
-          MONGODB_CLUSTER_ADDRESS: ${{ secrets.MONGODB_CLUSTER_ADDRESS }}
+          MONGO_DB_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
         run: |
           python main.py

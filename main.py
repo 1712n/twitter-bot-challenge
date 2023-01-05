@@ -9,7 +9,7 @@ TW_CONSUMER_KEY = os.environ['TW_CONSUMER_KEY']
 TW_CONSUMER_KEY_SECRET = os.environ['TW_CONSUMER_KEY_SECRET']
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
-mongodb_cluster_address = os.environ['MONGODB_CLUSTER_ADDRESS']
+mongo_db_address = os.environ['MONGO_DB_ADDRESS']
 
 # Connect to MongoDB
 client = MongoClient(f'mongodb+srv://{mongodb_user}:{mongodb_password}@{mongodb_cluster_address}')
