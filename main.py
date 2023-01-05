@@ -146,15 +146,15 @@ def post_tweet(ohlcv_db, posts_db):
         logging.error("Error adding a post to db: %s", e)
 
 
-def get_database(name):
+def get_database():
+     return mongo_client
     load_dotenv()
     user = os.environ["MONGODB_USER"]
     password = os.environ["MONGODB_PASSWORD"]
     address = os.environ["MONGO_DB_ADDRESS"]
-
     uri = f"mongodb+srv://{user}:{password}@{address}"
     client = pymongo.MongoClient(uri)
-    return client[name]
+    return client
 
 
 if __name__ == "__main__":
@@ -162,20 +162,22 @@ if __name__ == "__main__":
         "%(asctime)s::%(levelname)s::%(name)s::" "%(filename)s::%(lineno)d::%(message)s"
     )
     logging.basicConfig(level="DEBUG", format=log_format)
+    mongo_client = get_database()
+    ohlcv_db = mongo_client["metrics"]["ohlcv_db"]
+    posts_db = mongo_client["metrics"]["posts_db"]
+    ohlcv_db = client.ohlcv_db
+    posts_db = client.posts_db
 
-#     ohlcv_db = client.ohlcv_db
-#     posts_db = client.posts_db
-#     print(ohlcv_db.list_collection_names())
-#     print(posts_db.list_collection_names())
-#     token = os.environ["TW_ACCESS_TOKEN"]
-#     token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
-#     consumer_key = os.environ["TW_CONSUMER_KEY"]
-#     consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
-#     oauth = OAuth(
-#         consumer_key=consumer_key,
-#         consumer_secret=consumer_secret,
-#         token=token,
-#         token_secret=token_secret,
-#     )
+    
+    token = os.environ["TW_ACCESS_TOKEN"]
+    token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
+    consumer_key = os.environ["TW_CONSUMER_KEY"]
+    consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
+    oauth = OAuth(
+        consumer_key=consumer_key,
+        consumer_secret=consumer_secret,
+        token=token,
+        token_secret=token_secret,
+    )
 
-#     post_tweet(ohlcv_db, posts_db)
+    post_tweet(ohlcv_db, posts_db)
