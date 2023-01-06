@@ -21,7 +21,7 @@ def demo_client():
 
 @pytest.fixture(scope="function")
 def demo_db(demo_client):
-    demo_db = demo_client["demo_db"]
+    demo_db = demo_client["metrics"]
     demo_db["ohlcv_db"]
     demo_db["posts_db"]
     yield demo_db
