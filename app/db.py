@@ -1,7 +1,7 @@
 import logging
 import sys
 from datetime import datetime, timedelta
-from typing import Iterable, List, Set
+from typing import Iterable, List
 
 import config
 import pymongo
@@ -119,7 +119,7 @@ def get_top_pairs(ohlcv_db: pymongo.collection.Collection,
 
 @mongodb_read_error_handler
 def get_latest_posted_pairs(posts_db: pymongo.collection.Collection,
-                            top_pairs: List) -> Set:
+                            top_pairs: List) -> List:
     """
         Function to return latest distinct pairs posted among the top pairs by volume sorted from latest to oldest
     """
@@ -148,28 +148,14 @@ def get_latest_posted_pairs(posts_db: pymongo.collection.Collection,
         },
     ], )
 
-    latest_posted_pairs = {
-        x['_id']
-        for x in posts_documents if not isinstance(x['_id'], list)
-    }
+    latest_posted_pairs = [
+        x['_id'] for x in posts_documents if not isinstance(x['_id'], list)
+    ]
 
     return latest_posted_pairs
 
 
-@mongodb_read_error_handler
-def get_latest_posted_pair(posts_db: pymongo.collection.Collection) -> str:
-    """
-        Function to return the latest posted pair
-    """
-    document = posts_db.find({}).sort('time', pymongo.DESCENDING).limit(1)
-    # Check if the document is not empty
-    if list(document.clone()):
-        return document[0].get('pair')
-
-
-def get_pair_to_post(posts_db: pymongo.collection.Collection,
-                     top_pairs: List,
-                     last_posted: str = None,
+def get_pair_to_post(top_pairs: List,
                      latest_posted_pairs: Iterable = None) -> str:
     """
         Function to return the pair to post
@@ -182,14 +168,15 @@ def get_pair_to_post(posts_db: pymongo.collection.Collection,
         # If all top pairs have been posted, return the oldest posted pair
         return latest_posted_pairs[-1]
     else:
-        # If there are posted pairs among top pairs, return the first pair by volume among them if this pair is not the last posted one (to avoid posting the same pair twice in a row)
-        if last_posted is None:
-            last_posted = get_latest_posted_pair(posts_db)
-
+        # If there are posted pairs among top pairs,
+        # return the first pair by volume among them
+        # if this pair is not the last posted one (to avoid posting the same pair twice in a row)
+        latest_posted_pairs_set = set(latest_posted_pairs)
         for pair in top_pairs:
-            if pair in latest_posted_pairs:
-                if pair != last_posted:
-                    return pair
+            # yapf: disable
+            if pair in latest_posted_pairs_set and pair != latest_posted_pairs[0]:
+                return pair
+            # yapf: enable
 
 
 if __name__ == "__main__":
@@ -199,10 +186,11 @@ if __name__ == "__main__":
     # assert('C' == get_pair_to_post(top,last_posted = 'A',latest_posted_pairs=['A','C']))
     ohlcv_db = get_mongo_collection('ohlcv_db')
     posts_db = get_mongo_collection('posts_db')
-    top_pairs = get_top_pairs()
+    top_pairs = get_top_pairs(ohlcv_db)
     print(top_pairs)
-    latest_posted_pairs = get_latest_posted_pairs(top_pairs)
+    latest_posted_pairs = get_latest_posted_pairs(top_pairs=top_pairs,
+                                                  posts_db=posts_db)
     print(latest_posted_pairs)
-    pair_to_post = get_pair_to_post(top_pairs,
+    pair_to_post = get_pair_to_post(top_pairs=top_pairs,
                                     latest_posted_pairs=latest_posted_pairs)
     print(pair_to_post)

@@ -32,7 +32,7 @@ class MarketCapBot:
         latest_posted_pairs = db.get_latest_posted_pairs(
             self.posts_db, top_pairs)
         pair_to_post = db.get_pair_to_post(
-            self.posts_db, top_pairs, latest_posted_pairs=latest_posted_pairs)
+            top_pairs, latest_posted_pairs=latest_posted_pairs)
         return pair_to_post
 
     @db.mongodb_read_error_handler
