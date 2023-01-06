@@ -1,7 +1,10 @@
 import os
 import logging
 from dotenv import load_dotenv
-from db import (
+from pymongo.database import Database
+from tweepy.client import Client
+from typing import Callable
+from src.db import (
     get_db_client,
     get_top_pairs_by_volume,
     get_pair_to_post,
@@ -9,7 +12,7 @@ from db import (
     get_origin_tweet_id,
     add_new_post_to_db
 )
-from twitter_bot import (
+from src.twitter_bot import (
     get_twitter_client,
     new_tweet
 )
@@ -33,21 +36,13 @@ access_token = os.environ["TW_ACCESS_TOKEN"]
 access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
 
 
-def main():
+def main(db: Database, twitter_client: Client, new_tweet_func: Callable):
     logging.info("Starting script..")
-    db_client = get_db_client(uri=uri)
-    db = db_client.metrics
-    twitter_client = get_twitter_client(
-        consumer_key,
-        consumer_secret,
-        access_token,
-        access_token_secret
-    )
-    top_pairs = get_top_pairs_by_volume(db=db)
-    pair_to_post = get_pair_to_post(db=db, pairs=top_pairs)
-    message_to_post = get_message_to_post(db=db, pair=pair_to_post)
-    origin_tweet_id = get_origin_tweet_id(db=db, pair=pair_to_post)
-    new_tweet_id = new_tweet(
+    top_pairs = get_top_pairs_by_volume(db)
+    pair_to_post = get_pair_to_post(db, top_pairs)
+    message_to_post = get_message_to_post(db, pair_to_post)
+    origin_tweet_id = get_origin_tweet_id(db, pair_to_post)
+    new_tweet_id = new_tweet_func(
         client=twitter_client,
         pair=pair_to_post,
         text=message_to_post,
@@ -64,4 +59,12 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    db_client = get_db_client(uri)
+    db = db_client["metrics"]
+    twitter_client = get_twitter_client(
+        consumer_key,
+        consumer_secret,
+        access_token,
+        access_token_secret
+    )
+    main(db, twitter_client, new_tweet)
