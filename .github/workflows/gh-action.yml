@@ -40,4 +40,4 @@ jobs:
           MONGO_DB_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
           # TODO: add more
         run: |
-          python src/main.py
+          python main.py
