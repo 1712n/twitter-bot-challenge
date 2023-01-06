@@ -61,6 +61,7 @@ def get_pair_to_post(db: Database, pairs: List):
     try:
         fetched_data = db.posts_db.aggregate(
             [
+                {"$unwind": {"path": "$pair"}},
                 {"$match": {"pair": {"$in": pairs}}},
                 {
                     "$project": {
@@ -71,10 +72,10 @@ def get_pair_to_post(db: Database, pairs: List):
                 {
                     "$group": {
                         "_id": "$pair",
-                        "latest post": {"$max": "$timestamp"}
+                        "latest_post": {"$max": "$timestamp"}
                     }
                 },
-                {"$sort": {"latest post": 1}},
+                {"$sort": {"latest_post": 1}},
                 {"$limit": 5},
             ]
         )
