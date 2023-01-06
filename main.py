@@ -8,7 +8,7 @@ import logging
 from database import Database
 from twitter import Twitter
 
-use_twitter = False  # change to True if you want the tweet to be actually posted
+use_twitter = True  # change to True if you want the tweet to be actually posted
 
 
 def get_top_pairs(db):
@@ -69,7 +69,7 @@ def get_latest_posts(db, top_pairs):
     return [(x["_id"], x["time"]) for x in res]
 
 
-def select_pair_to_post(top_pairs, latest_pairs):
+def select_pair_to_post(top_pairs, latest_pairs, db):
     # The instructions are unclear, the exact algorithm to choose the pair to post is not given
     # So I'm just going to pick the biggest pair by volume that's in latest_pairs
 
@@ -80,6 +80,27 @@ def select_pair_to_post(top_pairs, latest_pairs):
             return pair, volume
     # If such pair does not exist, simply post the most voluminous pair
     return top_pairs[0]
+
+
+def choose_message(db, top_pairs):
+    message = None
+    pair_to_post = None
+    for pair in top_pairs:
+        duplicate_message = db.posts().aggregate([{
+            "$match": {
+                "pair":  pair[0]
+            }
+        }])
+        messages = list(duplicate_message)
+        if len(messages) == 0:
+            message = compose_message(db, pair)
+            pair_to_post = pair
+            break
+    if message == None:
+        logging.info("All recent pairs have already been posted; nothing else to post.")
+        sys.exit(0)
+    return(message, pair_to_post)
+
 
 def compose_message(db, pair_to_post):
     pair = pair_to_post[0]
@@ -125,7 +146,7 @@ def compose_message(db, pair_to_post):
     items = sorted(market_venues.items(), key=lambda x: x[1], reverse=True)[:5]
     percentages = [(key, (value / total_volume)) for (key, value) in items]
     others = 1.0 - sum([x[1] for x in percentages])
-    response = f"Top Market Venues for {pair}:\n"
+    response = f"Top Market Venues for  {pair}:\n"
     for (market, value) in percentages:
         percentage = str(round(value * 100, 1))
         venue = market.capitalize()
@@ -142,7 +163,6 @@ def post_message_to_db(db, pair, message):
         "time": datetime.datetime.fromisoformat(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
     }
     db.posts().insert_one(post)
-
 
 def post_message_to_twitter(db, pair, message):
     parent = db.posts().find({
@@ -181,14 +201,20 @@ if __name__ == '__main__':
         logging.error(f"Error reading posts: {e}")
         sys.exit(1)
 
-    pair_to_post = select_pair_to_post(top_pairs, latest_pairs)
-
     message = None
+    pair_to_post = None
     try:
-        message = compose_message(db, pair_to_post)
+        message, pair_to_post = choose_message(db, top_pairs)
     except pymongo.errors.PyMongoError as e:
-        logging.error(f"Error reading ohlcv: {e}")
+        logging.error(f"Error reading posts: {e}")
         sys.exit(1)
+
+    #message = None
+    #try:
+    #    message = compose_message(db, pair_to_post)
+    #except pymongo.errors.PyMongoError as e:
+    #    logging.error(f"Error reading ohlcv: {e}")
+    #    sys.exit(1)
 
     try:
         post_message_to_db(db, pair_to_post, message)
