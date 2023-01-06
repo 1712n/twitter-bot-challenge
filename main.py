@@ -146,7 +146,7 @@ def compose_message(db, pair_to_post):
     items = sorted(market_venues.items(), key=lambda x: x[1], reverse=True)[:5]
     percentages = [(key, (value / total_volume)) for (key, value) in items]
     others = 1.0 - sum([x[1] for x in percentages])
-    response = f"Top Market Venues for  {pair}:\n"
+    response = f"Top Market Venues for {pair}:\n"
     for (market, value) in percentages:
         percentage = str(round(value * 100, 1))
         venue = market.capitalize()
