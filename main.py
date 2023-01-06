@@ -25,16 +25,6 @@ logging.basicConfig(
 
 load_dotenv()
 
-user = os.environ["MONGODB_USER"]
-password = os.environ["MONGODB_PASSWORD"]
-address = os.environ["MONGO_DB_ADDRESS"]
-uri = f"mongodb+srv://{user}:{password}@{address}"
-
-consumer_key = os.environ["TW_CONSUMER_KEY"]
-consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
-access_token = os.environ["TW_ACCESS_TOKEN"]
-access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
-
 
 def main(db: Database, twitter_client: Client, new_tweet_func: Callable):
     logging.info("Starting script..")
@@ -59,6 +49,16 @@ def main(db: Database, twitter_client: Client, new_tweet_func: Callable):
 
 
 if __name__ == "__main__":
+    user = os.environ["MONGODB_USER"]
+    password = os.environ["MONGODB_PASSWORD"]
+    address = os.environ["MONGO_DB_ADDRESS"]
+    uri = f"mongodb+srv://{user}:{password}@{address}"
+
+    consumer_key = os.environ["TW_CONSUMER_KEY"]
+    consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
+    access_token = os.environ["TW_ACCESS_TOKEN"]
+    access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
+
     db_client = get_db_client(uri)
     db = db_client["metrics"]
     twitter_client = get_twitter_client(
