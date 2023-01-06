@@ -71,7 +71,7 @@ def get_pair_to_post(db: Database, pairs: List):
                 {
                     "$group": {
                         "_id": "$pair",
-                        "latest post": {"$min": "$timestamp"}
+                        "latest post": {"$max": "$timestamp"}
                     }
                 },
                 {"$sort": {"latest post": 1}},
