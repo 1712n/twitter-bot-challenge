@@ -82,20 +82,21 @@ def select_pair_to_post(top_pairs, latest_pairs, db):
     return top_pairs[0]
 
 
-def choose_message(db, top_pairs):
+def choose_message(db, top_pairs, latest_pairs):
+    def extract_pair(pair):
+        pairs = pair[0]
+        if isinstance(pair, tuple) or isinstance(pair, list) :
+            return pair[0]
+        else:
+            return pair
+
     message = None
     pair_to_post = None
     for pair in top_pairs:
-        duplicate_message = db.posts().aggregate([{
-            "$match": {
-                "pair":  pair[0]
-            }
-        }])
-        messages = list(duplicate_message)
-        if len(messages) == 0:
+        latest_pairs = [extract_pair(x) for x in latest_pairs]
+        if pair[0]  not in latest_pairs:
             message = compose_message(db, pair)
             pair_to_post = pair
-            break
     if message == None:
         logging.info("All recent pairs have already been posted; nothing else to post.")
         sys.exit(0)
@@ -158,7 +159,7 @@ def compose_message(db, pair_to_post):
 
 def post_message_to_db(db, pair, message):
     post = {
-        "pair": pair,
+        "pair": pair[0],
         "tweet_text": message,
         "time": datetime.datetime.fromisoformat(datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M"))
     }
@@ -204,7 +205,7 @@ if __name__ == '__main__':
     message = None
     pair_to_post = None
     try:
-        message, pair_to_post = choose_message(db, top_pairs)
+        message, pair_to_post = choose_message(db, top_pairs, latest_pairs)
     except pymongo.errors.PyMongoError as e:
         logging.error(f"Error reading posts: {e}")
         sys.exit(1)
