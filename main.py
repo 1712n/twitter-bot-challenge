@@ -1,5 +1,5 @@
 import tweepy
-from pymongo import MongoClient
+import pymongo
 import os
 
 def main():
@@ -18,7 +18,7 @@ def main():
         address = os.environ["MONGO_DB_ADDRESS"]
 
         uri = f"mongodb+srv://{user}:{password}@{address}"
-        client = MongoClient(uri)
+        client = pymongo.MongoClient(uri)
         ohlcv_db = client['ohlcv_db']
         posts_db = client['posts_db']
 
