@@ -31,4 +31,5 @@ jobs:
           MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
           MONGODB_CLUSTER_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
         run: |
+          mypy main.py
           python main.py

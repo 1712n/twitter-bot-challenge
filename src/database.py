@@ -12,6 +12,7 @@ class MongoDatabase:
         try:
             self.uri = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_CLUSTER_ADDRESS}'
             self.client = MongoClient(self.uri)
+            logging.info('Connected to MongoDB Server.')
         except PyMongoError as e:
             logging.error(f"Cannot connect to the database: {e}")
             exit(1)
@@ -21,8 +22,3 @@ class MongoDatabase:
 
     def posts(self):
         return self.client["metrics"]["posts_db"]
-
-
-db = MongoDatabase()
-pprint(db.ohlcv().find_one())
-pprint(db.posts().find_one())

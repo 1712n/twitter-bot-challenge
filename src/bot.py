@@ -1,7 +1,9 @@
 import datetime
-from pprint import pprint
+import logging
 
 import pymongo
+from pymongo.errors import PyMongoError
+from tweepy import TweepyException
 
 from database import MongoDatabase
 from twitter import Twitter
@@ -11,6 +13,7 @@ class TwitterMarketCapBot:
     def __init__(self, db: MongoDatabase, twitter: Twitter):
         self.db = db
         self.twitter = twitter
+        logging.info('Bot started...')
 
     def get_top_pairs(self, amount: int = 100) -> set[str]:
         granularity = {"$match": {"granularity": "1h"}}
@@ -68,12 +71,16 @@ class TwitterMarketCapBot:
         return top_pairs - latest_posted_pairs_set
 
     def get_pair_to_post(self, top_pairs: set[str], latest_posted_pairs: set[tuple]) -> str:
-        not_posted_pair = self.get_not_posted_pairs(top_pairs, latest_posted_pairs)
-        if not_posted_pair:
-            return not_posted_pair.pop()
+        """
+        - if there are pairs that were not posted ever we return any of them
+        - else we return oldest from latest posted pairs
+        """
+        not_posted_pairs = self.get_not_posted_pairs(top_pairs, latest_posted_pairs)
+        if not_posted_pairs:
+            return not_posted_pairs.pop()
         return sorted(latest_posted_pairs, key=lambda x: x[1])[0][0]
 
-    def get_market_venues(self, pair_to_post: str) -> list:
+    def get_pair_market_venues(self, pair_to_post: str) -> list[dict]:
         pair_symbol = pair_to_post.split('-')[0].lower()
         pair_base = pair_to_post.split('-')[1].lower()
 
@@ -109,18 +116,18 @@ class TwitterMarketCapBot:
         ])
         return list(result)
 
-    def get_message_to_post(self, pair_to_post: str, market_venues: list[dict]) -> str:
+    def get_message_to_post(self, pair_to_post: str, pair_market_venues: list[dict]) -> str:
         message_to_post = f"Top Market Venues for {pair_to_post}:\n"
-        total_volume = sum(item['volume']['value'] for item in market_venues)
-        if len(market_venues) <= 6:
-            for item in market_venues:
+        total_volume = sum(item['volume']['value'] for item in pair_market_venues)
+        if len(pair_market_venues) <= 6:
+            for item in pair_market_venues:
                 message_to_post += f"{item['_id'].capitalize()} {item['volume']['value'] / total_volume * 100:.2f}%\n"
         else:
-            for i, item in enumerate(market_venues):
+            for i, item in enumerate(pair_market_venues):
                 if i == 5:
                     break
                 message_to_post += f"{item['_id'].capitalize()} {item['volume']['value'] / total_volume * 100:.2f}%\n"
-            total_volume_left = sum(item['volume']['value'] for item in market_venues[5:])
+            total_volume_left = sum(item['volume']['value'] for item in pair_market_venues[5:])
             message_to_post += f"Others {total_volume_left / total_volume * 100:.2f}%"
         return message_to_post
 
@@ -147,10 +154,15 @@ class TwitterMarketCapBot:
             return response.data.get('id')
 
     def run(self):
-        top = self.get_top_pairs()
-        # latest = self.get_latest_posted_pairs(top)
-        # pair = self.get_pair_to_post(top, latest)
-        # venues = self.get_market_venues(pair)
-        # message = self.get_message_to_post(pair, venues)
-        # tweet_id = self.tweet_message(pair, message)
-        # self.save_message_to_posts_db(pair, tweet_id, message)
+        try:
+            top_pairs = self.get_top_pairs()
+            latest_posted_pairs = self.get_latest_posted_pairs(top_pairs)
+            pair_to_post = self.get_pair_to_post(top_pairs, latest_posted_pairs)
+            pair_market_venues = self.get_pair_market_venues(pair_to_post)
+            message_to_post = self.get_message_to_post(pair_to_post, pair_market_venues)
+            tweet_id = self.tweet_message(pair_to_post, message_to_post)
+            self.save_message_to_posts_db(pair_to_post, tweet_id, message_to_post)
+            logging.info(f'Successfully posted pair {pair_to_post} to Twitter and saved tweet to posts_db.')
+        except (TweepyException, PyMongoError) as e:
+            logging.error(f'Got problem while running our bot: {e}')
+            exit(1)
