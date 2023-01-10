@@ -29,12 +29,12 @@ class TwitterMarketCapBot:
                 "volume": pymongo.DESCENDING
             }
         }
-        amount = {"$limit": amount}
+        qty = {"$limit": amount}
         result = self.db.ohlcv().aggregate([
             granularity,
             data,
             sorting,
-            amount
+            qty
         ])
         return {item['_id']['pair'] for item in result}
 
@@ -64,8 +64,8 @@ class TwitterMarketCapBot:
         return {(item["_id"], item['time']) for item in result if isinstance(item["_id"], str)}
 
     def get_not_posted_pairs(self, top_pairs: set[str], latest_posted_pairs: set[tuple]) -> set[str]:
-        latest_posted_pairs = {pair for pair, time in latest_posted_pairs}
-        return top_pairs - latest_posted_pairs
+        latest_posted_pairs_set = {pair for pair, time in latest_posted_pairs}
+        return top_pairs - latest_posted_pairs_set
 
     def get_pair_to_post(self, top_pairs: set[str], latest_posted_pairs: set[tuple]) -> str:
         not_posted_pair = self.get_not_posted_pairs(top_pairs, latest_posted_pairs)
@@ -148,9 +148,9 @@ class TwitterMarketCapBot:
 
     def run(self):
         top = self.get_top_pairs()
-        latest = self.get_latest_posted_pairs(top)
-        pair = self.get_pair_to_post(top, latest)
-        venues = self.get_market_venues(pair)
-        message = self.get_message_to_post(pair, venues)
-        tweet_id = self.tweet_message(pair, message)
-        self.save_message_to_posts_db(pair, tweet_id, message)
+        # latest = self.get_latest_posted_pairs(top)
+        # pair = self.get_pair_to_post(top, latest)
+        # venues = self.get_market_venues(pair)
+        # message = self.get_message_to_post(pair, venues)
+        # tweet_id = self.tweet_message(pair, message)
+        # self.save_message_to_posts_db(pair, tweet_id, message)
