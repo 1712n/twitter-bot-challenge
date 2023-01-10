@@ -1,8 +1,8 @@
-name: Template CryptoCapBot Python application
+name: CryptoCapBot Python application
 
 on:
   push:
-    branches: ["my-branch-name"] # TODO: rename
+    branches: ["faralost"]
 
 jobs:
   build:
@@ -22,11 +22,14 @@ jobs:
           if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
 
       - name: Execute python script
-        env: # Or as an environment variable
-          TW_ACCESS_TOKEN: ${{ secrets.TW_ACCESS_TOKEN }}
-          TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
-          TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
-          TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
-          # TODO: add more
+        env:
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TW_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET : ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
+          TWITTER_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
+          TWITTER_CONSUMER_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
+          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          MONGODB_PASSWORD: ${{ secrets.MONGODB_PASSWORD }}
+          MONGODB_CLUSTER_ADDRESS: ${{ secrets.MONGO_DB_ADDRESS }}
         run: |
-          python main.py
+          mypy src/main.py
+          python src/main.py

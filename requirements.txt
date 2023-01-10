@@ -1,0 +1,4 @@
+python-dotenv==0.21.0
+pymongo==4.3.3
+tweepy==4.12.1
+mypy==0.991
