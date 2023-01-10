@@ -1,7 +1,3 @@
-from datetime import datetime
-from typing import NamedTuple
-from pprint import pprint
-
 import pymongo
 
 from database import MongoDatabase
@@ -37,7 +33,7 @@ class TwitterMarketCapBot:
         ])
         return {item['_id']['pair'] for item in result}
 
-    def get_latest_posted_pairs(self, top_pairs: set[str]) -> set[str]:
+    def get_latest_posted_pairs(self, top_pairs: set[str]) -> set[tuple]:
         matching = {
             "$match": {
                 "pair": {"$in": list(top_pairs)}
@@ -60,8 +56,68 @@ class TwitterMarketCapBot:
             latest,
             sort_latest,
         ])
-        return {item["_id"] for item in result if isinstance(item["_id"], str)}
+        return {(item["_id"], item['time']) for item in result if isinstance(item["_id"], str)}
 
-    def get_not_posted_pairs(self, top_pairs: set[str], latest_posted_pairs: set[str]) -> set[str]:
+    def get_not_posted_pairs(self, top_pairs: set[str], latest_posted_pairs: set[tuple]) -> set[str]:
+        latest_posted_pairs = {pair for pair, time in latest_posted_pairs}
         return top_pairs - latest_posted_pairs
 
+    def get_pair_to_post(self, top_pairs: set[str], latest_posted_pairs: set[tuple]) -> str:
+        not_posted_pair = self.get_not_posted_pairs(top_pairs, latest_posted_pairs)
+        if not_posted_pair:
+            return not_posted_pair.pop()
+        return sorted(latest_posted_pairs, key=lambda x: x[1])[0][0]
+
+    def get_market_venues(self, pair_to_post: str) -> list:
+        pair_symbol = pair_to_post.split('-')[0].lower()
+        pair_base = pair_to_post.split('-')[1].lower()
+
+        granularity = {"$match": {"granularity": "1h"}}
+        pair = {
+            "$match": {
+                "pair_symbol": pair_symbol,
+                "pair_base": pair_base
+            }
+        }
+        group = {
+            "$group": {
+                "_id": "$marketVenue",
+                "volume": {
+                    "$max": {
+                        "time": "$timestamp",
+                        "value": {"$toDouble": "$volume"},
+                    }
+                }
+            }
+        }
+        sorting = {
+            "$sort": {
+                "volume.value": pymongo.DESCENDING
+            }
+
+        }
+        result = self.db.ohlcv().aggregate([
+            granularity,
+            pair,
+            group,
+            sorting
+        ])
+        return list(result)
+
+    def message_to_post(self, pair_to_post: str, market_venues: list[dict]) -> str:
+        message_to_post = f"Top Market Venues for {pair_to_post}:\n"
+        total_volume = sum(item['volume']['value'] for item in market_venues)
+        if len(market_venues) <= 6:
+            for item in market_venues:
+                message_to_post += f"{item['_id'].capitalize()} {item['volume']['value'] / total_volume * 100:.2f}%\n"
+        else:
+            for i, item in enumerate(market_venues):
+                if i == 5:
+                    break
+                message_to_post += f"{item['_id'].capitalize()} {item['volume']['value'] / total_volume * 100:.2f}%\n"
+            total_volume_left = sum(item['volume']['value'] for item in market_venues[5:])
+            message_to_post += f"Others {total_volume_left / total_volume * 100:.2f}%"
+        return message_to_post
+
+    def run(self):
+        pass

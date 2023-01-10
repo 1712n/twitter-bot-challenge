@@ -22,6 +22,5 @@ class MongoDatabase:
     def posts(self):
         return self.client["metrics"]["posts_db"]
 
+
 db = MongoDatabase()
-pprint(db.ohlcv().find_one())
-pprint(db.posts().find_one())

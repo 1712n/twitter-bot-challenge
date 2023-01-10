@@ -1,5 +1,3 @@
-import logging
-
 from bot import TwitterMarketCapBot
 from database import MongoDatabase
 
