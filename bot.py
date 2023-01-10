@@ -1,11 +1,16 @@
+import datetime
+from pprint import pprint
+
 import pymongo
 
 from database import MongoDatabase
+from twitter import Twitter
 
 
 class TwitterMarketCapBot:
-    def __init__(self, db: MongoDatabase):
+    def __init__(self, db: MongoDatabase, twitter: Twitter):
         self.db = db
+        self.twitter = twitter
 
     def get_top_pairs(self, amount: int = 100) -> set[str]:
         granularity = {"$match": {"granularity": "1h"}}
@@ -104,7 +109,7 @@ class TwitterMarketCapBot:
         ])
         return list(result)
 
-    def message_to_post(self, pair_to_post: str, market_venues: list[dict]) -> str:
+    def get_message_to_post(self, pair_to_post: str, market_venues: list[dict]) -> str:
         message_to_post = f"Top Market Venues for {pair_to_post}:\n"
         total_volume = sum(item['volume']['value'] for item in market_venues)
         if len(market_venues) <= 6:
@@ -119,5 +124,33 @@ class TwitterMarketCapBot:
             message_to_post += f"Others {total_volume_left / total_volume * 100:.2f}%"
         return message_to_post
 
+    def save_message_to_posts_db(self, posted_pair: str, tweet_id: str, tweet_message: str) -> None:
+        current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+        post = {
+            'pair': posted_pair,
+            'tweet_text': tweet_message,
+            'time': datetime.datetime.fromisoformat(current_time),
+            'tweet_id': tweet_id
+        }
+        self.db.posts().insert_one(post)
+
+    def tweet_message(self, pair_to_post: str, message_to_post: str) -> str:
+        parent_tweet = self.db.posts().find(
+            {'pair': pair_to_post, 'tweet_id': {'$exists': True}}
+        ).sort('time', pymongo.DESCENDING).limit(1)
+        parent_tweet = list(parent_tweet)
+        if len(parent_tweet) == 0:
+            response = self.twitter.tweet(message_to_post)
+            return response.data.get('id')
+        else:
+            response = self.twitter.reply(message_to_post, parent_tweet[0]['tweet_id'])
+            return response.data.get('id')
+
     def run(self):
-        pass
+        top = self.get_top_pairs()
+        latest = self.get_latest_posted_pairs(top)
+        pair = self.get_pair_to_post(top, latest)
+        venues = self.get_market_venues(pair)
+        message = self.get_message_to_post(pair, venues)
+        tweet_id = self.tweet_message(pair, message)
+        self.save_message_to_posts_db(pair, tweet_id, message)

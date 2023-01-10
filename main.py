@@ -1,10 +1,12 @@
 from bot import TwitterMarketCapBot
 from database import MongoDatabase
+from twitter import Twitter
 
 
 def main():
     db = MongoDatabase()
-    bot = TwitterMarketCapBot(db=db)
+    twitter = Twitter()
+    bot = TwitterMarketCapBot(db=db, twitter=twitter)
     bot.run()
 
 

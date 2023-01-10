@@ -24,3 +24,5 @@ class MongoDatabase:
 
 
 db = MongoDatabase()
+pprint(db.ohlcv().find_one())
+pprint(db.posts().find_one())
