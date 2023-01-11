@@ -6,7 +6,7 @@ from pyspark.sql import SparkSession
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
 mongodb_address = os.environ['MONGODB_ADDRESS']
-mongodb_uri = 'mongodb://{mongodb_user}:{mongodb_password}@{mongodb_address}'
+mongodb_uri = f'mongodb://{mongodb_user}:{mongodb_password}@{mongodb_address}'
 
 jars_path = 'jars/*'
 
