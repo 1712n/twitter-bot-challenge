@@ -14,6 +14,7 @@ spark = (
     .builder
     .master('local[*]')
     .config('spark.mongodb.input.uri', 'mongodb://{mongodb_user}:{mongodb_password}@{mongodb_address}/ohlcv_db')
+    .config('spark.mongodb.input.readPreference.name', 'secondaryPreferred')
     .config('spark.driver.extraClassPath', jars_path)
     .getOrCreate()
 )
