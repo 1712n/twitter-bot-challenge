@@ -11,7 +11,7 @@ mongodb_uri = f'mongodb://{mongodb_user}:{mongodb_password}@{mongodb_address}'
 from pymongo import MongoClient
 
 mongodb_uri = f'mongodb+srv://{mongodb_user}:{mongodb_password}@{mongodb_address}'
-client = MongoClient(uri)
+client = MongoClient(mongodb_uri)
 print(client)
 
 '''
