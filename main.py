@@ -11,8 +11,7 @@ mongodb_uri = 'mongodb://{mongodb_user}:{mongodb_password}@{mongodb_address}'
 jars_path = 'jars/*'
 
 spark = (
-    SparkSession
-    .builder
+    SparkSession.builder
     .master('local[*]')
     .config('spark.mongodb.input.uri', mongodb_uri)
     .config('spark.mongodb.input.database', 'ohlcv_db')
@@ -23,8 +22,7 @@ spark = (
 
 df = (
     spark.read
-    #.format('mongodb').load()
-    .format('com.mongodb.spark.sql.DefaultSource')
+    .format('mongodb')
     .option('uri', f'{mongodb_uri}/ohlcv_db')
     .load()
 )
