@@ -1,6 +1,7 @@
 import os
 
 import pyspark
+from pyspark.sql import functions as F
 from pyspark.sql import SparkSession
 
 mongodb_user = os.environ['MONGODB_USER']
@@ -15,8 +16,6 @@ spark = (
     .master('local[*]')
     .config('spark.driver.extraClassPath', jars_path)
     .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}')
-    #.config('spark.mongodb.read.connection.uri', f'{mongodb_uri}/metrics.ohlcv_db')
-    #.config('spark.mongodb.write.connection.uri', 'mongodb://test/test.coll')
     .getOrCreate()
 )
 
@@ -26,6 +25,7 @@ df = (
     .option('database', 'metrics')
     .option('collection', 'ohlcv_db')
     .load()
+    .orderBy(F.desc('volume'))
+    .limit(100)
 )
-df.printSchema()
-
+df.show()
