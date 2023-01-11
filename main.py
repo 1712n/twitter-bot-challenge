@@ -13,10 +13,9 @@ jars_path = 'jars/*'
 spark = (
     SparkSession.builder
     .master('local[*]')
-    .config('spark.mongodb.input.uri', 'mongodb://test111/test.test')
-    #.config('spark.mongodb.input.database', 'ohlcv_db')
-    #.config('spark.mongodb.input.readPreference.name', 'primaryPreferred')
     .config('spark.driver.extraClassPath', jars_path)
+    .config("spark.mongodb.read.connection.uri", "mongodb://test/test.coll")
+    .config("spark.mongodb.write.connection.uri", "mongodb://test/test.coll")
     .getOrCreate()
 )
 
