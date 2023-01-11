@@ -29,3 +29,4 @@ df = (
     .limit(100)
 )
 df.printSchema()
+df.show()
