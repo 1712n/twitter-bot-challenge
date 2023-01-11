@@ -23,7 +23,8 @@ spark = (
 df = (
     spark.read
     .format('mongodb')
-    .option('uri', f'{mongodb_uri}')
+    #.option('uri', f'{mongodb_uri}')
+    .option('uri', 'mongodb://test111')
     .option('database', 'ohlcv_db')
     .option('collection', 'pair')
     .load()
