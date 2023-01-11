@@ -200,6 +200,24 @@ def compose_message(pair, pair_symbol, pair_base, ohlcv_db, time_period=1):
     return message_to_post
 
 
+def post_message_to_db(pair, posts_db, message):
+    """
+    Function for adding post to db.
+    """
+    logger.info('Adding post to db...')
+    try:
+        posts_db.insert_one(
+            {
+                'pair': pair,
+                'time': datetime.now().astimezone(),
+                'tweet_text': message,
+            }
+        )
+        logger.info('Post was successfully added to db.')
+    except Exception as error:
+        logger.error(f'Problems with adding new post to db: {error}')
+
+
 top_pairs = get_top_pairs(ohlcv_db)
 posts = get_latest_posts(top_pairs)
 pair, post_id = get_pair_to_post(top_pairs, posts)
@@ -209,3 +227,5 @@ pair_symbol = pair.split('-')[0].lower()
 pair_base = pair.split('-')[1].lower()
 result = compose_message(pair, pair_symbol, pair_base, ohlcv_db)
 print(result)
+
+
