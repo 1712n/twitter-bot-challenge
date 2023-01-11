@@ -14,7 +14,6 @@ mongodb_uri = f'mongodb+srv://{mongodb_user}:{mongodb_password}@{mongodb_address
 client = MongoClient(mongodb_uri)
 print(client)
 
-'''
 jars_path = 'jars/*'
 
 spark = (
@@ -34,4 +33,4 @@ df = (
     .load()
 )
 df.printSchema()
-'''
+
