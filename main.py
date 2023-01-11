@@ -24,6 +24,7 @@ df = (
     .format('mongodb')
     .option('database', 'metrics')
     .option('collection', 'ohlcv_db')
+    .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
     .load()
     .orderBy(F.desc('volume'))
     .limit(100)
