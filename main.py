@@ -28,4 +28,4 @@ df = (
     .orderBy(F.desc('volume'))
     .limit(100)
 )
-df.show()
+df.printSchema()
