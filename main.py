@@ -16,7 +16,7 @@ spark = (
     #.config('spark.mongodb.input.uri', mongodb_uri)
     #.config('spark.mongodb.input.database', 'ohlcv_db')
     #.config('spark.mongodb.input.readPreference.name', 'primaryPreferred')
-    #.config('spark.driver.extraClassPath', jars_path)
+    .config('spark.driver.extraClassPath', jars_path)
     .getOrCreate()
 )
 
