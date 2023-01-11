@@ -15,7 +15,7 @@ spark = (
     .master('local[*]')
     .config('spark.mongodb.input.uri', mongodb_uri)
     .config('spark.mongodb.input.database', 'ohlcv_db')
-    .config('spark.mongodb.input.readPreference.name', 'secondaryPreferred')
+    .config('spark.mongodb.input.readPreference.name', 'primaryPreferred')
     .config('spark.driver.extraClassPath', jars_path)
     .getOrCreate()
 )
@@ -23,8 +23,8 @@ spark = (
 df = (
     spark.read
     .format('mongodb')
-    .option('uri', f'{mongodb_uri}/ohlcv_db')
-    .option('database', 'ohlcv_db')
+    #.option('uri', f'{mongodb_uri}/ohlcv_db')
+    #.option('database', 'ohlcv_db')
     .load()
 )
 df.printSchema()
