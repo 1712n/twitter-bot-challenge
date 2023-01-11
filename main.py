@@ -14,7 +14,8 @@ spark = (
     SparkSession.builder
     .master('local[*]')
     .config('spark.driver.extraClassPath', jars_path)
-    .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}/metrics.ohlcv_db')
+    .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}')
+    #.config('spark.mongodb.read.connection.uri', f'{mongodb_uri}/metrics.ohlcv_db')
     #.config('spark.mongodb.write.connection.uri', 'mongodb://test/test.coll')
     .getOrCreate()
 )
@@ -22,8 +23,8 @@ spark = (
 df = (
     spark.read
     .format('mongodb')
-    #.option('database', 'ohlcv_db')
-    #.option('collection', 'pair')
+    .option('database', 'metrics')
+    .option('collection', 'ohlcv_db')
     .load()
 )
 df.printSchema()
