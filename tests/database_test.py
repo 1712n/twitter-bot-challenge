@@ -1,5 +1,5 @@
 import unittest
-from main import autoreconnect
+from database import autoreconnect
 import pymongo
 
 class TestAutoReconnectHandler(unittest.TestCase):
