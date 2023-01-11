@@ -14,7 +14,7 @@ spark = (
     SparkSession.builder
     .master('local[*]')
     .config('spark.driver.extraClassPath', jars_path)
-    .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}/ohlcv_db.pair?authSource=ohlcv_db')
+    .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}/metrics.ohlcv_db')
     #.config('spark.mongodb.write.connection.uri', 'mongodb://test/test.coll')
     .getOrCreate()
 )
