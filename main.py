@@ -24,6 +24,7 @@ df = (
     spark.read
     .format('mongodb')
     .option('uri', f'{mongodb_uri}/ohlcv_db')
+    .option('database', 'ohlcv_db')
     .load()
 )
 df.printSchema()
