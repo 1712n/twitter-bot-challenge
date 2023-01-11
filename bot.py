@@ -6,6 +6,7 @@ from datetime import datetime, timedelta
 import pandas as pd
 import pymongo
 from dotenv import load_dotenv
+from pprint import pprint
 
 load_dotenv()
 
@@ -43,7 +44,7 @@ def get_top_pairs(ohlcv_db, time_period=1):
     """
     Searching for top traiding pairs to post.
     """
-    logger.info('Starting get_pair_to_post method.')
+    logger.info('Starting get_top_pairs function.')
     logger.info('Querying ohlcv_db for the top 100 pairs by compound volume..')
     top_pairs = list(
         ohlcv_db.aggregate(
@@ -82,6 +83,7 @@ def get_latest_posts(top_pairs):
     """
     Searching for the corresponding latest posts.
     """
+    logger.info('Starting get_latest_posts function.')
     logger.info('Querying posts_db for the latest documents corresponding to'
                 'choosen 100 pairs...')
     pairs = list(x['_id'].upper() for x in top_pairs)
@@ -115,6 +117,7 @@ def get_pair_to_post(top_pairs, posts):
     """
     Choosing pair to post.
     """
+    logger.info('Starting get_pair_to_post function.')
     logger.info('Choosing pair to post...')
     pairs = list(x['_id'].upper() for x in top_pairs)
     top_pairs = pd.DataFrame(top_pairs, index=pairs)
@@ -134,3 +137,75 @@ def get_pair_to_post(top_pairs, posts):
     pair_to_post = result.iloc[0]
     logger.info(f'Selected pair is {result.index.values[0]}')
     return [result.index.values[0], pair_to_post['post_id']]
+
+
+def compose_message(pair, pair_symbol, pair_base, ohlcv_db, time_period=1):
+    """
+    Compose message to post.
+    """
+    logger.info('Starting compose_message function.')
+    logger.info(f'Querying ohlcv_db for {pair} pair '
+                'with corresponding latest volumes by market values')
+    result = list(
+        ohlcv_db.aggregate(
+            [
+                {
+                    '$match': {
+                        'timestamp': {
+                            '$gte': datetime.now().astimezone()
+                            - timedelta(hours=time_period)
+                        },
+                        'pair_symbol': pair_symbol,
+                        'pair_base': pair_base,
+                    }
+                },
+                {
+                    '$group': {
+                        '_id': '$marketVenue',
+                        'volume': {
+                            '$max': {
+                                'time': '$timestamp',
+                                'value': {'$toDouble': '$volume'}
+                            }
+                        },
+                    }
+                },
+
+            ]
+        )
+    )
+    if len(result) == 0:
+        raise ValueError('No documents for the given pair were found.')
+
+    result = pd.DataFrame(
+        [{'_id': x['_id'], 'market_volume': x['volume']['value']}
+         for x in result]
+    ).sort_values(by='market_volume', ascending=False)
+
+    message_to_post = f'Top Market Venues for {pair}:\n'
+    total_volume = result['market_volume'].sum()
+    if len(result) <= 6:
+        for i, val in result.iterrows():
+            message_to_post += (
+                f"{val['_id'].capitalize()} {(val['market_volume']/total_volume)*100:.2f}%\n"
+            )
+    else:
+        for i, val in result.iloc[:5].iterrows():
+            message_to_post += (
+                f"{val['_id'].capitalize()} {(val['market_volume']/total_volume)*100:.2f}%\n"
+            )
+        message_to_post += (
+            f"Others {(1 - result['market_volume'].iloc[:5].sum()/total_volume)*100:.2f}%\n"
+        )
+    return message_to_post
+
+
+top_pairs = get_top_pairs(ohlcv_db)
+posts = get_latest_posts(top_pairs)
+pair, post_id = get_pair_to_post(top_pairs, posts)
+print(pair)
+print(post_id)
+pair_symbol = pair.split('-')[0].lower()
+pair_base = pair.split('-')[1].lower()
+result = compose_message(pair, pair_symbol, pair_base, ohlcv_db)
+print(result)
