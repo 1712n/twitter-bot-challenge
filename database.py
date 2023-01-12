@@ -64,7 +64,11 @@ def choose_pair(client):
             }
         }, {
             '$group': {
-                '_id': '$market_id',
+                '_id': {
+                    'marketVenue': '$marketVenue',
+                    'pair_base': '$pair_base',
+                    'pair_symbol': '$pair_symbol'
+                },
                 'volume': {
                     '$first': '$volume'
                 },
@@ -191,3 +195,54 @@ def choose_pair(client):
         f"Chose pair {chosen_pair} with market volume {top_pairs[chosen_pair]}")
 
     return chosen_pair, top_pairs[chosen_pair]
+
+
+def get_markets(client, pair):
+    """Returns all markets with volumes for a given pair.
+
+    Arguments:
+        client: A database client.
+        pair: A string representing a trading pair.
+    Returns:
+        dict: Keys are market's names, values are their volumes.
+    """
+
+    logging.info('Getting markets for the chosen pair...')
+    pair_symbol, pair_base = pair.lower().split('-')
+    markets_cursor = client['metrics']['ohlcv_db'].aggregate([
+        {
+            '$match': {
+                'pair_base': pair_base, 
+                'pair_symbol': pair_symbol
+            }
+        }, {
+            '$sort': {
+                'timestamp': -1
+            }
+        }, {
+            '$group': {
+                '_id': '$marketVenue', 
+                'volume': {
+                    '$first': '$volume'
+                }
+            }
+        }, {
+            '$project': {
+                'volume': {
+                    '$convert': {
+                        'input': '$volume', 
+                        'to': 'double'
+                    }
+                }
+            }
+        }
+    ])
+
+    markets = {}
+    for doc in markets_cursor:
+        markets[doc['_id']] = doc['volume']
+
+    logging.info('Got markets successfully')
+    logging.debug('Markets: %s', str(markets))
+
+    return markets
