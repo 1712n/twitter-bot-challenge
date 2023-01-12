@@ -3,6 +3,7 @@ import os
 import pyspark
 from pyspark.sql import functions as F
 from pyspark.sql import SparkSession
+from pyspark.sql.window import Window
 
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
