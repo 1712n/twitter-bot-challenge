@@ -81,3 +81,54 @@ last_post.show(100)
 
 # clarify how old should be the last post to do the new one
 pair_to_post = last_post.filter('days_from_post >= 3 or days_from_post is null')
+
+w = Window.partitionBy('pair')
+pair_market_share = (
+    ohlcv_pair
+    .join(pair_to_post, on='pair')
+    .withColumn('total_volume', F.sum('volume').over(w))
+    .groupBy('market_venue', 'pair', 'total_volume')
+    .agg(F.sum('volume').alias('market_volume'))
+    .withColumn('market_share', F.round(F.col('market_volume')/F.col('total_volume')*100, 2))
+    .orderBy('pair', F.desc('market_share'))
+)
+pair_market_share.show()
+
+top_5_market = (
+    pair_market_share
+    .withColumn('row_number', F.row_number().over(w.orderBy(F.desc('market_share'))))
+    .filter('row_number <= 5')
+    .filter('market_share >= 0.01')
+    .select('market_venue', 'pair', 'market_share') 
+)
+
+other_market = (
+    top_5_market
+    .groupBy('pair')
+    .agg(F.round(100 - F.sum('market_share'), 2).alias('market_share'))
+    .select(
+        F.lit('other').alias('market_venue'),
+        'pair', 
+        'market_share'
+    )
+    .filter('market_share >= 0.01')
+)
+
+top_5_with_other_market = (
+    top_5_market
+    .unionByName(other_market)
+    .orderBy('pair', F.desc('market_share'))
+)
+top_5_with_other_market.show()
+
+message_to_post = (
+    top_5_with_other_market
+    .withColumn('text', F.concat(F.initcap('market_venue'), F.lit(' '), F.col('market_share'), F.lit('%')))
+    .groupBy('pair')
+    .agg(F.concat_ws('\n', F.collect_list('text')).alias('footer'))
+    .withColumn('header', F.concat(F.lit('Top Market Venues for '), 'pair', F.lit(':\n')))
+    .select(
+        'pair',
+        F.concat('header', 'footer').alias('tweet_text'))
+)
+message_to_post.show(truncate=False)
