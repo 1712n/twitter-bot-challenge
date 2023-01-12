@@ -41,5 +41,29 @@ top_100_pairs = (
     .orderBy(F.desc('sum(compound_volume_usd)')) # sum(volume)?
     .limit(100)
 )
-
 top_100_pairs.show(truncate=False)
+
+posts_df = (
+    spark.read
+    .format('mongodb')
+    .option('database', 'metrics')
+    .option('collection', 'posts_db')
+    .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
+    .load()
+)
+
+w = Window.partitionBy('pair').orderBy(F.desc('time'))
+
+last_posts = (
+    conc_pairs
+    .join(posts_df, on='pair', how='left')
+    .withColumn('row_number', F.row_number().over(w))
+    .withColumn('days_from_post', F.datediff(F.current_date(), F.col('time')))
+    .filter('row_number = 1')
+    .select(
+        'pair',
+        'tweet_id',
+        'time',
+        'days_from_post')
+)
+last_posts.show(100)
