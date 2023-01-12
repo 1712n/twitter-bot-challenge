@@ -130,5 +130,6 @@ message_to_post = (
     .select(
         'pair',
         F.concat('header', 'footer').alias('tweet_text'))
+    .orderBy('pair')
 )
 message_to_post.show(truncate=False)
