@@ -2,11 +2,12 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
+from pprint import pprint
 
 import pandas as pd
 import pymongo
+import tweepy
 from dotenv import load_dotenv
-from pprint import pprint
 
 load_dotenv()
 
@@ -218,6 +219,47 @@ def post_message_to_db(pair, posts_db, message):
         logger.error(f'Problems with adding new post to db: {error}')
 
 
+# methods for twitter
+def post_tweet(message_to_post, pair, posts_db):
+    """
+    Post tweet function.
+    """
+    logger.info('Getting tweepy client.')
+    try:
+        tweepy_client = tweepy.Client(
+            consumer_key=TW_CONSUMER_KEY,
+            consumer_secret=TW_CONSUMER_KEY_SECRET,
+            access_token=TW_ACCESS_TOKEN,
+            access_token_secret=TW_ACCESS_TOKEN_SECRET,
+        )
+        logger.info('Tweepy client succsessfuly created.')
+    except Exception as error:
+        logger.error(f'Problems with getting tweepy client: {error}')
+    logger.info('Searching for the corresponding Twitter thread.')
+    post = list(posts_db.find({
+        'pair': pair,
+        'tweet_id': {
+            '$exists': True
+        }
+    }).sort('time', pymongo.DESCENDING).limit(1)
+    )
+    if len(post) == 0:
+        logger.info('Corresponding Twitter thread was not found. '
+                    'Posting new tweet.')
+        tweepy_client.create_tweet(text=message_to_post)
+    else:
+        logger.info('Posting tweet to the corresponding thread.')
+        tweet_id = post[0]['tweet_id']
+        tweepy_client.create_tweet(
+            text=message_to_post,
+            in_reply_to_tweet_id=tweet_id
+        )
+
+
+def main():
+    pass
+
+
 top_pairs = get_top_pairs(ohlcv_db)
 posts = get_latest_posts(top_pairs)
 pair, post_id = get_pair_to_post(top_pairs, posts)
@@ -227,5 +269,4 @@ pair_symbol = pair.split('-')[0].lower()
 pair_base = pair.split('-')[1].lower()
 result = compose_message(pair, pair_symbol, pair_base, ohlcv_db)
 print(result)
-
-
+pprint(post_tweet(result, pair, posts_db))
