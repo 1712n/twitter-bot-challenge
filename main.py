@@ -29,29 +29,30 @@ ohlcv_df = (
     .load()
 )
 
-# check if compound volume should be in pieces or in usd
 # check if last n days should be filtered explicitly
-# check if need to handle the case usd != usdc,usdt...
-# check if top coins should be taken but not pairs
-top_100_pairs = (
+ohlcv_pair = (
     ohlcv_df
     .filter('granularity = "1h"') # filter 'today - n days >= timestamp'?
-    .withColumn('compound_volume_usd', F.col('volume')*F.col('close')) # close * stablecoin_rate?
-    .groupBy('pair_base', 'pair_symbol') # pair_symbol only?
+    .withColumn('pair_symbol', F.upper('pair_symbol'))
+    .withColumn('pair_base', F.upper('pair_base'))
+    .withColumn('pair', F.concat('pair_symbol', F.lit('-'), 'pair_base').alias('pair'))
+    .withColumnRenamed('marketVenue', 'market_venue')
+    .persist()
+)
+
+# check if compound volume should be in pieces or in usd
+# check if need to handle the case usd != usdc,usdt...
+# check if top coins should be taken but not pairs
+top_100_pair = (
+    ohlcv_pair
+    .withColumn('compound_volume_usd', F.col('volume')*F.col('close')) # close * stablecoin_rate
+    .groupBy('pair') # pair_symbol only?
     .agg(F.sum('volume'), F.sum('compound_volume_usd'))
     .orderBy(F.desc('sum(compound_volume_usd)')) # sum(volume)?
     .limit(100)
+    .persist()
 )
-top_100_pairs.persist().show(truncate=False)
-
-conc_pairs = (
-    top_100_pairs
-    .select(
-        F.upper('pair_symbol').alias('pair_symbol'),
-        F.upper('pair_base').alias('pair_base'))
-    .select(
-        F.concat('pair_symbol', F.lit('-'), 'pair_base').alias('pair'))
-)
+top_100_pair.show(truncate=False)
 
 posts_df = (
     spark.read
@@ -64,8 +65,8 @@ posts_df = (
 
 w = Window.partitionBy('pair').orderBy(F.desc('time'))
 
-last_posts = (
-    conc_pairs
+last_post = (
+    top_100_pair
     .join(posts_df, on='pair', how='left')
     .withColumn('row_number', F.row_number().over(w))
     .withColumn('days_from_post', F.datediff(F.current_date(), F.col('time')))
@@ -76,4 +77,7 @@ last_posts = (
         'time',
         'days_from_post')
 )
-last_posts.show(100)
+last_post.show(100)
+
+# clarify how old should be the last post to do the new one
+pair_to_post = last_post.filter('days_from_post >= 3 or days_from_post is null')
