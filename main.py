@@ -42,7 +42,16 @@ top_100_pairs = (
     .orderBy(F.desc('sum(compound_volume_usd)')) # sum(volume)?
     .limit(100)
 )
-top_100_pairs.show(truncate=False)
+top_100_pairs.persist().show(truncate=False)
+
+conc_pairs = (
+    top_100_pairs
+    .select(
+        F.upper('pair_symbol').alias('pair_symbol'),
+        F.upper('pair_base').alias('pair_base'))
+    .select(
+        F.concat('pair_symbol', F.lit('-'), 'pair_base').alias('pair'))
+)
 
 posts_df = (
     spark.read
