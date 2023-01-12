@@ -1,30 +1,35 @@
+import datetime
 import tweepy
 import pymongo
 import os
 
 def post_tweet(pair_to_post, message_to_post):
-    # Authenticate with the Twitter API using OAuth 1.0a
-    auth = tweepy.OAuth1UserHandler(
-        consumer_key=os.environ['TW_CONSUMER_KEY'],
-        consumer_secret=os.environ['TW_CONSUMER_SECRET'],
-        access_token=os.environ['TW_ACCESS_TOKEN'],
-        access_token_secret=os.environ['TW_ACCESS_TOKEN_SECRET'])
-    api = tweepy.API(auth)
-    tweet = api.update_status(status=message_to_post)
-    tweet_id = tweet.id
+    try:
+        # Authenticate with the Twitter API using OAuth 1.0a
+        auth = tweepy.OAuth1UserHandler(
+            consumer_key=os.environ['TW_CONSUMER_KEY'],
+            consumer_secret=os.environ['TW_CONSUMER_SECRET'],
+            access_token=os.environ['TW_ACCESS_TOKEN'],
+            access_token_secret=os.environ['TW_ACCESS_TOKEN_SECRET'])
+        api = tweepy.API(auth)
+        tweet = api.update_status(status=message_to_post)
+        tweet_id = tweet.id
 
-    # add tweet to posts_db
-    post = {
-        "pair": pair_to_post,
-        "message": message_to_post,
-        "tweet_id": tweet_id
-    }
-    posts_db.insert_one(post)
+        # add tweet to posts_db
+        post = {
+            "pair": pair_to_post,
+            "time": datetime.datetime.utcnow(),
+            "tweet_text": message_to_post,
+            "tweet_id": tweet_id
+        }
+        posts_db.insert_one(post)
+    except tweepy.TweepError as e:
+        print(e)
 
 def compose_message(pair_to_post, volume_data):
     message = f"Top Market Venues for {pair_to_post}:\n"
-    for market, volume in volume_data:
-        message += f"{market}: {volume}%\n"
+    for market in volume_data:
+        message += f"{market['marketVenue']}: {market['volume']}%\n"
     return message
 
 def main():
@@ -39,35 +44,31 @@ def main():
         ohlcv_db = client['ohlcv_db']
         posts_db = client['posts_db']
 
-        # # Use a tailable cursor to efficiently read the latest documents in the ohlcv_db capped collection
-        # cursor = ohlcv_db.find(cursor_type=pymongo.cursor.CursorType.TAILABLE).sort([('$natural', -1)]).limit(100)
+        # query for top 100 pairs by volume
+        top_pairs = ohlcv_db.aggregate([
+            {"$sort": {"volume": -1}},
+            {"$limit": 100}
+        ])
 
-        # # Continuously process new documents as they are added to the collection
-        # while cursor.alive:
-        #     for doc in cursor:
-        #         # Check if the document corresponds to a pair that hasn't been tweeted about recently
-        #         latest_post = posts_db.find_one({'pair': doc['pair']})
-        #         if not latest_post or doc['timestamp'] > latest_post['timestamp']:
-        #             # Compose the message_to_post
-        #             message_to_post = f"Top Market Venues for {doc['pair']}:\n"
-        #             for market, volume in doc['market_volumes'].items():
-        #                 message_to_post += f"{market}: {volume:.2f}%\n"
+        # query for pairs that haven't been posted recently
+        not_recently_posted = posts_db.find({"time": {"$lt": datetime.datetime.utcnow() - datetime.timedelta(days=7)}})
 
-        #             # Check if the message_to_post already exists in the posts collection
-        #             existing_post = posts_db.find_one({'message': message_to_post})
-        #             if existing_post:
-        #                 # If it does, post the tweet to the corresponding Twitter thread
-        #                 tweet = api.update_status(status=message_to_post, in_reply_to_status_id=existing_post['tweet_id'])
-        #             else:
-        #                 # If it doesn't, post a new tweet
-        #                 tweet = api.update_status(status=message_to_post)
+        # find pair with highest volume among those that haven't been posted recently
+        pair_to_post = None
+        max_volume = 0
+        for pair in not_recently_posted:
+            volume = ohlcv_db.find_one({"pair_symbol": pair["pair"].split("-")[0], "pair_base": pair["pair"].split("-")[1]})["volume"]
+            if volume > max_volume:
+                pair_to_post = pair["pair"]
+                max_volume = volume
 
-        #             # Add the message_to_post to the posts collection
-        #             posts_db.insert_one({'pair': doc['pair'], 'timestamp': doc['timestamp'], 'message': message_to_post, 'tweet_id': tweet.id})
+        # compose message to post
+        volume_data = ohlcv_db.find({"pair_symbol": pair_to_post.split("-")[0], "pair_base": pair_to_post.split("-")[1]})
+        message_to_post = compose_message(pair_to_post, volume_data)
 
+        post_tweet(pair_to_post, message_to_post)
     except Exception as e:
-        # Print the error message if something goes wrong
-        print(e)
+        print(f"An error occurred: {e}")
 
 if __name__ == '__main__':
     main()
