@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
 
-from src.db_querries import *
+import src.db_querries as querry
 
 
 logger = logging.getLogger(__name__)
@@ -58,9 +58,9 @@ def main():
     posts_col = client["metrics"]["posts_db"]
 
     # TODO: handle possible exeptions
-    pairs_vol_dict = get_top_pairs(ohlcv_col)
+    pairs_vol_dict = querry.get_top_pairs(ohlcv_col)
     # TODO: handle possible exeptions
-    pairs_last_posts_dict = get_posts_for_pairs(
+    pairs_last_posts_dict = querry.get_posts_for_pairs(
         posts_col, list(pairs_vol_dict.keys()))
 
     db_pairs_set = set(pairs_vol_dict.keys())
@@ -76,7 +76,7 @@ def main():
         vol = pairs_vol_dict[pair]
 
     # TODO: handle possible exeptions
-    pair_market_stats = gather_pair_data(ohlcv_col, pair)
+    pair_market_stats = querry.gather_pair_data(ohlcv_col, pair)
 
     message = compose_message(pair, vol, pair_market_stats)
     print(message)
