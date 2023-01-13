@@ -10,6 +10,11 @@ import tweepy
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
+def log_df(legend, df, n=20, truncate=20, vertical=False):
+    int_truncate = int(truncate)
+    df_string = df._jdf.showString(n, int_truncate, vertical)
+    logger.info(f'{legend}\n{df_string}')
+
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
 mongodb_address = os.environ['MONGODB_ADDRESS']
@@ -62,8 +67,7 @@ top_100_pair = (
     .limit(100)
     .persist()
 )
-logging.info('Top 100 pairs by compound volume:')
-top_100_pair.show(truncate=False)
+log_df('Top 100 pairs by compound volume:', top_100_pair, truncate=False)
 
 posts_df = (
     spark.read
@@ -88,7 +92,7 @@ last_post = (
         'time',
         'days_from_post')
 )
-last_post.show(100)
+log_df('Last posts in twitter for top 100 pairs:', last_post, 100)
 
 # clarify how old should be the last post to do the new one
 pair_to_post = last_post.filter('days_from_post >= 3 or days_from_post is null')
