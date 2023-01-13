@@ -113,7 +113,7 @@ other_market = (
     .groupBy('pair')
     .agg(F.round(100 - F.sum('market_share'), 2).alias('market_share'))
     .select(
-        F.lit('other').alias('market_venue'),
+        F.lit('others').alias('market_venue'),
         'pair', 
         'market_share'
     )
@@ -129,12 +129,23 @@ top_5_with_other_market.show()
 
 message_to_post = (
     top_5_with_other_market
-    .withColumn('text', F.concat(F.initcap('market_venue'), F.lit(' '), F.col('market_share'), F.lit('%')))
+    .withColumn(
+        'market_venue_share',
+        F.concat(
+            F.initcap('market_venue'),
+            F.lit(' '),
+            F.col('market_share'),
+            F.lit('%')))
     .groupBy('pair')
-    .agg(F.concat_ws('\n', F.collect_list('text')).alias('footer'))
-    .withColumn('header', F.concat(F.lit('Top Market Venues for '), 'pair', F.lit(':\n')))
+    .agg(F.concat_ws('\n', F.collect_list('market_venue_share')).alias('footer'))
+    .withColumn(
+        'header',
+        F.concat(
+            F.lit('Top Market Venues for '),
+            F.col('pair'),
+            F.lit(':\n')))
     .select(
-        'pair',
+        F.col('pair'),
         F.concat('header', 'footer').alias('tweet_text'))
     .orderBy('pair')
 )
@@ -147,4 +158,4 @@ twitter_client = tweepy.Client(
     access_token=tw_access_token,
     access_token_secret=tw_access_token_secret
 )
-twitter_client.create_tweet(text=tweet_text)
+# twitter_client.create_tweet(text=tweet_text)
