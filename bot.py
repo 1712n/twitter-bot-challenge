@@ -2,7 +2,6 @@ import logging
 import os
 import sys
 from datetime import datetime, timedelta
-from pprint import pprint
 
 import pandas as pd
 import pymongo
@@ -11,7 +10,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-# get environment variables
+# load environment variables
 TW_ACCESS_TOKEN = os.getenv('TW_ACCESS_TOKEN')
 TW_ACCESS_TOKEN_SECRET = os.getenv('TW_ACCESS_TOKEN_SECRET')
 TW_CONSUMER_KEY = os.getenv('TW_CONSUMER_KEY')
@@ -31,13 +30,14 @@ handler.setFormatter(formatter)
 logger.addHandler(handler)
 logger.setLevel(logging.DEBUG)
 
-# connecting to the MongoDB cluster and getting collections
-uri = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGO_DB_ADDRESS}'
-client = pymongo.MongoClient(uri)
 
-db = client['metrics']
-ohlcv_db = db['ohlcv_db']
-posts_db = db['posts_db']
+# method for connecting to the MongoDB cluster
+def get_mongodb_client():
+    uri = f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGO_DB_ADDRESS}'
+    logger.info('Connecting to MongoDB')
+    client = pymongo.MongoClient(uri)
+    logger.info('Connected to MongoDB.')
+    return client
 
 
 # methods for working with db
@@ -80,7 +80,7 @@ def get_top_pairs(ohlcv_db, time_period=1):
     return top_pairs
 
 
-def get_latest_posts(top_pairs):
+def get_latest_posts(top_pairs, posts_db):
     """
     Searching for the corresponding latest posts.
     """
@@ -201,7 +201,7 @@ def compose_message(pair, pair_symbol, pair_base, ohlcv_db, time_period=1):
     return message_to_post
 
 
-def post_message_to_db(pair, posts_db, message):
+def add_post_to_db(pair, posts_db, message, tweet_id):
     """
     Function for adding post to db.
     """
@@ -212,6 +212,7 @@ def post_message_to_db(pair, posts_db, message):
                 'pair': pair,
                 'time': datetime.now().astimezone(),
                 'tweet_text': message,
+                'tweet_id': tweet_id,
             }
         )
         logger.info('Post was successfully added to db.')
@@ -233,8 +234,10 @@ def post_tweet(message_to_post, pair, posts_db):
             access_token_secret=TW_ACCESS_TOKEN_SECRET,
         )
         logger.info('Tweepy client succsessfuly created.')
+        user_id = tweepy_client.get_me().data.id
     except Exception as error:
         logger.error(f'Problems with getting tweepy client: {error}')
+
     logger.info('Searching for the corresponding Twitter thread.')
     post = list(posts_db.find({
         'pair': pair,
@@ -247,6 +250,9 @@ def post_tweet(message_to_post, pair, posts_db):
         logger.info('Corresponding Twitter thread was not found. '
                     'Posting new tweet.')
         tweepy_client.create_tweet(text=message_to_post)
+        recent_tweets = tweepy_client.get_users_tweets(
+            id=user_id, user_auth=True)
+        tweet_id = recent_tweets.meta['newest_id']
     else:
         logger.info('Posting tweet to the corresponding thread.')
         tweet_id = post[0]['tweet_id']
@@ -254,19 +260,85 @@ def post_tweet(message_to_post, pair, posts_db):
             text=message_to_post,
             in_reply_to_tweet_id=tweet_id
         )
+    return tweet_id
+
+
+# other methods
+def check_tokens():
+    """
+    Checking environment variables.
+    """
+    tokens = (
+        TW_ACCESS_TOKEN, TW_ACCESS_TOKEN_SECRET, TW_CONSUMER_KEY,
+        TW_CONSUMER_KEY_SECRET, MONGO_DB_ADDRESS, MONGODB_PASSWORD,
+        MONGODB_USER
+    )
+    logger.info('Checking environment variables.')
+    for name in tokens:
+        if name is None:
+            logger.critical(
+                f'Missing required environment variable: {name}'
+            )
+            return False
+    return True
 
 
 def main():
-    pass
+    """
+    The main logic of the bot.
+    """
+    logger.info('Starting main function.')
 
+    if not check_tokens():
+        raise Exception('Missing required environment variables.')
+    
+    try:
+        client = get_mongodb_client()
+    except Exception as error:
+        logger.error(f'Connection to MongoDB failed: {error}')
+        sys.exit(1)
+    
+    ohlcv_db = client['metrics']['ohlcv_db']
+    posts_db = client['metrics']['posts_db']
 
-top_pairs = get_top_pairs(ohlcv_db)
-posts = get_latest_posts(top_pairs)
-pair, post_id = get_pair_to_post(top_pairs, posts)
-print(pair)
-print(post_id)
-pair_symbol = pair.split('-')[0].lower()
-pair_base = pair.split('-')[1].lower()
-result = compose_message(pair, pair_symbol, pair_base, ohlcv_db)
-print(result)
-pprint(post_tweet(result, pair, posts_db))
+    try:
+        top_pairs = get_top_pairs(ohlcv_db)
+    except Exception as error:
+        logger.error(f'Getting top pairs failed: {error}')
+        sys.exit(1)
+    
+    try:
+        posts = get_latest_posts(top_pairs, posts_db)
+    except Exception as error:
+        logger.error(f'Getting latest posts failed: {error}')
+        sys.exit(1)
+    
+    try:
+        pair, post_id = get_pair_to_post(top_pairs, posts)
+    except Exception as error:
+        logger.error(f'Getting pair to post failed: {error}')
+        sys.exit(1)
+    
+    pair_symbol = pair.split('-')[0].lower()
+    pair_base = pair.split('-')[1].lower()
+    
+    try:
+        message_to_post = compose_message(
+            pair, pair_symbol, pair_base, ohlcv_db
+        )
+    except Exception as error:
+        logger.error(f'Composing message to post failed: {error}')
+        sys.exit(1)
+    
+    try:
+        tweet_id = post_tweet(message_to_post, pair, posts_db)
+    except Exception as error:
+        logger.error(f'Posting tweet failed: {error}')
+        sys.exit(1)
+    
+    try:
+        add_post_to_db(
+            pair, posts_db, message_to_post, tweet_id)
+    except Exception as error:
+        logger.error(f'Adding post to db failed: {error}')
+        sys.exit(1)
