@@ -148,14 +148,49 @@ message_to_post = (
         F.col('pair'),
         F.concat('header', 'footer').alias('tweet_text'))
     .orderBy('pair')
+    .filter('pair = "BTC-USD"') # for test
 )
 message_to_post.show(truncate=False)
 
-tweet_text = message_to_post.limit(1).collect()[0][1]
+tweet_df = (
+    message_to_post
+    .join(
+        last_post
+        .select(
+            F.current_timestamp().alias('time'),
+            F.col('pair'),
+            F.col('tweet_id').alias('parent_tweet_id')),
+        on='pair',
+        how='left')
+    .withColumn('tweet_id', F.lit(None))
+)
+tweet_df.show()
+
 twitter_client = tweepy.Client(
     consumer_key=tw_consumer_key,
     consumer_secret=tw_consumer_secret,
     access_token=tw_access_token,
     access_token_secret=tw_access_token_secret
 )
-# twitter_client.create_tweet(text=tweet_text)
+
+# twitter posts limitation
+rows = tweet_df.limit(5).collect()
+for i, row in enumerate(rows):
+    parent_tweet_id = row['parent_tweet_id']
+    try:
+        if parent_tweet_id:
+            # tweet = twitter_client.create_tweet(text=tweet_text, in_reply_to_tweet_id=parent_tweet_id)
+            pass
+        else:
+            # tweet = twitter_client.create_tweet(text=tweet_text)
+            pass
+        tweet_id = tweet.data['id']
+        tweet = tweet.withColumn(
+            'tweet_id',
+            F.when(
+                F.col('pair') == row['pair'],
+                tweet_id
+            ).otherwise(
+                F.col('tweet_id')))
+    except:
+        print('exc', row)
