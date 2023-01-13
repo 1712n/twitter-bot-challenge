@@ -12,10 +12,9 @@ logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
 
 def log_df(legend, df, n=20, truncate=20, vertical=False):
-    logger.error(222)
     int_truncate = int(truncate)
     df_string = df._jdf.showString(n, int_truncate, vertical)
-    logger.info(f'{legend}\n{df_string}')
+    logger.info(f'{legend}:\n{df_string}')
 
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
@@ -69,7 +68,7 @@ top_100_pair = (
     .limit(100)
     .persist()
 )
-log_df('Top 100 pairs by compound volume:', top_100_pair, truncate=False)
+log_df('Top 100 pairs by compound volume', top_100_pair, truncate=False)
 
 posts_df = (
     spark.read
@@ -94,7 +93,7 @@ last_post = (
         'time',
         'days_from_post')
 )
-log_df('Last posts in twitter for top 100 pairs:', last_post, 100)
+log_df('Last posts in twitter for top 100 pairs', last_post, 100)
 
 # clarify how old should be the last post to do the new one
 pair_to_post = last_post.filter('days_from_post >= 3 or days_from_post is null')
@@ -109,7 +108,7 @@ pair_market_share = (
     .withColumn('market_share', F.round(F.col('market_volume')/F.col('total_volume')*100, 2))
     .orderBy('pair', F.desc('market_share'))
 )
-pair_market_share.show()
+log_df('Share of volume per market', pair_market_share)
 
 top_5_market = (
     pair_market_share
@@ -136,7 +135,7 @@ top_5_with_other_market = (
     .unionByName(other_market)
     .orderBy('pair', F.desc('market_share'))
 )
-top_5_with_other_market.show()
+log_df('Top 5 markets share per pair', top_5_with_other_market)
 
 message_to_post = (
     top_5_with_other_market
@@ -161,7 +160,7 @@ message_to_post = (
     .orderBy('pair')
     .filter('pair = "BTC-USD"') # for test
 )
-message_to_post.show(truncate=False)
+log_df('Message texts', message_to_post, truncate=False)
 
 tweet_df = (
     message_to_post
@@ -175,7 +174,7 @@ tweet_df = (
         how='left')
     .withColumn('tweet_id', F.lit(None))
 )
-tweet_df.show()
+log_df('Records for posts_db', tweet_df)
 
 twitter_client = tweepy.Client(
     consumer_key=tw_consumer_key,
