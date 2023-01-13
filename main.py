@@ -4,11 +4,17 @@ import pyspark
 from pyspark.sql import functions as F
 from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
+import tweepy
 
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
 mongodb_address = os.environ['MONGODB_ADDRESS']
 mongodb_uri = f'mongodb+srv://{mongodb_user}:{mongodb_password}@{mongodb_address}'
+
+tw_consumer_key = os.environ["TW_CONSUMER_KEY"]
+tw_consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
+tw_access_token = os.environ["TW_ACCESS_TOKEN"]
+tw_access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
 
 jars_path = 'jars/*'
 
@@ -133,3 +139,12 @@ message_to_post = (
     .orderBy('pair')
 )
 message_to_post.show(truncate=False)
+
+tweet_text = message_to_post.limit(1).collect()[0][1]
+twitter_client = tweepy.Client(
+    consumer_key=tw_consumer_key,
+    consumer_secret=tw_consumer_secret,
+    access_token=tw_access_token,
+    access_token_secret=tw_access_token_secret
+)
+twitter_client.create_tweet(text=tweet_text)
