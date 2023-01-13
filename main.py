@@ -1,5 +1,6 @@
 import os
 import logging
+from collections import OrderedDict
 
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
@@ -13,28 +14,40 @@ logging.basicConfig(
     format='%(name)s: %(levelname)s: %(message)s', level=logging.DEBUG)
 
 
-def find_pair_with_largest_vol(ordered_pairs_vol_dict, pairs_set):
-    for pair in ordered_pairs_vol_dict.keys():
-        if pair in pairs_set:
-            return pair, ordered_pairs_vol_dict[pair]
-    raise Exception(
-        "Pair intendened to de in orederd dictionary, containing top 100 pairs")
+class TopPairsByVolume(OrderedDict):
+    def diff(self, external_keys_set: set) -> set:
+        return set(self.keys()).difference(external_keys_set)
+
+    def find_largest_among(self, pairs_set: set):
+        for pair in self.keys():
+            if pair in pairs_set:
+                return pair, self[pair]
+        # TODO rewrite exeption text
+        raise Exception(
+            "Pair intendened to de in oredered dictionary, containing top 100 pairs")
 
 
-def compose_message(pair: str, total_vov: float, pair_market_stats: OrderedDict):
-    message = f"Top Market Venues for {pair}:\n"
-    remains = 100
-    for market in pair_market_stats.keys():
-        market_vol_percens = pair_market_stats[market] / total_vov * 100
-        remains -= market_vol_percens
+class OldestLastPostsForPairs(OrderedDict):
+    def oldes_pair(self) -> str:
+        return next(iter(self))
 
-        # forming a message
-        message += f"{market.title()} {market_vol_percens:.2f} \n"
 
-    if remains >= 0.01:
-        message += f"Others {remains:.2f} \n"
+class PairMarketStats(OrderedDict):
+    def compose_message(self, pair: str, total_vol: float):
+        message = f"Top Market Venues for {pair}:\n"
+    
+        remains = 100
+        for market in self.keys():
+            market_vol_percens = self[market] / total_vol * 100
+            remains -= market_vol_percens
 
-    return message
+            # forming a message
+            message += f"{market.title()} {market_vol_percens:.2f} \n"
+
+        if remains >= 0.01:
+            message += f"Others {remains:.2f} \n"
+
+        return message
 
 
 def main():
@@ -58,27 +71,33 @@ def main():
     posts_col = client["metrics"]["posts_db"]
 
     # TODO: handle possible exeptions
-    pairs_vol_dict = querry.get_top_pairs(ohlcv_col)
+    pairs_vollume_dict = TopPairsByVolume(querry.get_top_pairs(ohlcv_col))
     # TODO: handle possible exeptions
-    pairs_last_posts_dict = querry.get_posts_for_pairs(
-        posts_col, list(pairs_vol_dict.keys()))
+    pairs_last_posts_dict = OldestLastPostsForPairs(querry.get_posts_for_pairs(
+        posts_col, list(pairs_vollume_dict.keys())))
 
-    db_pairs_set = set(pairs_vol_dict.keys())
-    posts_pairs_set = set(pairs_last_posts_dict.keys())
+
     # pairs wich lack posts at all
-    diff = db_pairs_set.difference(posts_pairs_set)
+    diff = pairs_vollume_dict.diff(set(pairs_last_posts_dict.keys()))
+
 
     if len(diff) > 0:
         # TODO: handle possible exeptions
-        pair, vol = find_pair_with_largest_vol(pairs_vol_dict, diff)
+        pair, vol = pairs_vollume_dict.find_largest_among(diff)
     else:
-        pair = next(iter(pairs_last_posts_dict))
-        vol = pairs_vol_dict[pair]
+        pair = pairs_last_posts_dict.oldes_pair()
+        vol = pairs_vollume_dict[pair]
+
+
+    if type(pair) != str or type(vol) != float:
+        logger.error("Coudn't deside between unposted and oldest posted pairs")
+        raise Exception("Wrong types!")
+
 
     # TODO: handle possible exeptions
-    pair_market_stats = querry.gather_pair_data(ohlcv_col, pair)
+    pair_market_stats = PairMarketStats(querry.gather_pair_data(ohlcv_col, pair))
 
-    message = compose_message(pair, vol, pair_market_stats)
+    message = pair_market_stats.compose_message(pair, vol)
     print(message)
 
 
