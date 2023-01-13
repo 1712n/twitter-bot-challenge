@@ -21,7 +21,7 @@ def find_pair_with_largest_vol(ordered_pairs_vol_dict, pairs_set):
         "Pair intendened to de in orederd dictionary, containing top 100 pairs")
 
 
-def compose_message(pair, total_vov, pair_market_stats):
+def compose_message(pair: str, total_vov: float, pair_market_stats: OrderedDict):
     message = f"Top Market Venues for {pair}:\n"
     remains = 100
     for market in pair_market_stats.keys():
@@ -29,9 +29,9 @@ def compose_message(pair, total_vov, pair_market_stats):
         remains -= market_vol_percens
 
         # forming a message
-        message += f"{market} {market_vol_percens:.2f} \n"
+        message += f"{market.title()} {market_vol_percens:.2f} \n"
 
-    if remains > 0.009:
+    if remains >= 0.01:
         message += f"Others {remains:.2f} \n"
 
     return message
