@@ -1,10 +1,14 @@
 import os
+import logging
 
 import pyspark
 from pyspark.sql import functions as F
 from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
 import tweepy
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
 
 mongodb_user = os.environ['MONGODB_USER']
 mongodb_password = os.environ['MONGODB_PASSWORD']
@@ -58,6 +62,7 @@ top_100_pair = (
     .limit(100)
     .persist()
 )
+logging.info('Top 100 pairs by compound volume:')
 top_100_pair.show(truncate=False)
 
 posts_df = (
@@ -193,4 +198,4 @@ for i, row in enumerate(rows):
             ).otherwise(
                 F.col('tweet_id')))
     except:
-        print('exc', row)
+        logging.exception(msg=f'Tweet for {row["pair"]} failed')
