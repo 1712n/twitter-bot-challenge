@@ -60,12 +60,8 @@ def main():
         pair = next(iter(cor_posts_dict))
         vol = pairs_vol_dict[pair]
 
-    # print("pairs set - posts set")
-    # print(len(db_pairs_set.difference(posts_pairs_set)))
-    # print("posts set - pairs set")
-    # print(len(posts_pairs_set.difference(db_pairs_set)))
-    # print("intersection")
-    # print(len(db_pairs_set.intersection(posts_pairs_set)))
+    # TODO: handle possible exeptions
+    pair_market_stats = gather_pair_data(ohlcv_col, pair)
 
 
 if __name__ == "__main__":
