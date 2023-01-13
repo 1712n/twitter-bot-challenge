@@ -1,11 +1,12 @@
 import logging
+from pymongo import collection
 from collections import OrderedDict
 
 
 logger = logging.getLogger(__name__)
 
 
-def get_top_pairs(pairs_col):
+def get_top_pairs(pairs_col: collection.Collection) -> OrderedDict:
     pairs_total_vol_list = pairs_col.aggregate(
         [
             {
@@ -26,7 +27,7 @@ def get_top_pairs(pairs_col):
     return pairs_dict
 
 
-def get_posts_for_pairs(posts_col, pairs_list):
+def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> OrderedDict:
     posts_list = posts_col.aggregate(
         [
             {
@@ -70,7 +71,7 @@ def get_posts_for_pairs(posts_col, pairs_list):
     return posts_dict
 
 
-def gather_pair_data(pairs_col, pair):
+def gather_pair_data(pairs_col: collection.Collection, pair: str) -> OrderedDict:
     try:
         symbol, base = pair.lower().split('-')
     except:
