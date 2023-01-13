@@ -7,10 +7,11 @@ from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
 import tweepy
 
-logger = logging.getLogger()
+logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
 
-logger.error(111)
+logger.error('ERROR')
+logger.info('INFO')
 def log_df(legend, df, n=20, truncate=20, vertical=False):
     logger.error(222)
     int_truncate = int(truncate)
