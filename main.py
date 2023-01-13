@@ -9,7 +9,8 @@ from src.db_querries import *
 
 
 logger = logging.getLogger(__name__)
-logging.basicConfig(format='%(name)s: %(levelname)s: %(message)s', level=logging.DEBUG)
+logging.basicConfig(
+    format='%(name)s: %(levelname)s: %(message)s', level=logging.DEBUG)
 
 
 def find_pair_with_largest_vol(ordered_pairs_vol_dict, pairs_set):
@@ -20,6 +21,22 @@ def find_pair_with_largest_vol(ordered_pairs_vol_dict, pairs_set):
         "Pair intendened to de in orederd dictionary, containing top 100 pairs")
 
 
+def compose_message(pair, total_vov, pair_market_stats):
+    message = f"Top Market Venues for {pair}:\n"
+    remains = 100
+    for market in pair_market_stats.keys():
+        market_vol_percens = pair_market_stats[market] / total_vov * 100
+        remains -= market_vol_percens
+
+        # forming a message
+        message += f"{market} {market_vol_percens:.2f} \n"
+
+    if remains > 0.009:
+        message += f"Others {remains:.2f} \n"
+
+    return message
+
+
 def main():
     load_dotenv()
 
@@ -28,7 +45,7 @@ def main():
     address = os.environ["MONGO_DB_ADDRESS"]
 
     uri = f"mongodb+srv://{user}:{password}@{address}"
-    
+
     client = MongoClient(uri)
     try:
         # The ping command is cheap and does not require auth.
@@ -37,32 +54,33 @@ def main():
         logging.error("Database connection failure:")
         raise
 
-
     ohlcv_col = client["metrics"]["ohlcv_db"]
     posts_col = client["metrics"]["posts_db"]
 
     # TODO: handle possible exeptions
     pairs_vol_dict = get_top_pairs(ohlcv_col)
     # TODO: handle possible exeptions
-    cor_posts_dict = get_posts_for_pairs(posts_col, list(pairs_vol_dict.keys()))
-
+    pairs_last_posts_dict = get_posts_for_pairs(
+        posts_col, list(pairs_vol_dict.keys()))
 
     db_pairs_set = set(pairs_vol_dict.keys())
-    posts_pairs_set = set(cor_posts_dict.keys())
+    posts_pairs_set = set(pairs_last_posts_dict.keys())
     # pairs wich lack posts at all
     diff = db_pairs_set.difference(posts_pairs_set)
 
-
     if len(diff) > 0:
-    # TODO: handle possible exeptions
+        # TODO: handle possible exeptions
         pair, vol = find_pair_with_largest_vol(pairs_vol_dict, diff)
     else:
-        pair = next(iter(cor_posts_dict))
+        pair = next(iter(pairs_last_posts_dict))
         vol = pairs_vol_dict[pair]
 
     # TODO: handle possible exeptions
     pair_market_stats = gather_pair_data(ohlcv_col, pair)
 
+    message = compose_message(pair, vol, pair_market_stats)
+    print(message)
+
 
 if __name__ == "__main__":
-    main()     
+    main()
