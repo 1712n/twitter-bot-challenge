@@ -15,8 +15,9 @@ logging.basicConfig(format='%(name)s: %(levelname)s: %(message)s', level=logging
 def find_pair_with_largest_vol(ordered_pairs_vol_dict, pairs_set):
     for pair in ordered_pairs_vol_dict.keys():
         if pair in pairs_set:
-            return {pair, ordered_pairs_vol_dict[pair]}
-    raise Exception("Pair intendened to de in orederd dictionary, containing top 100 pairs")
+            return pair, ordered_pairs_vol_dict[pair]
+    raise Exception(
+        "Pair intendened to de in orederd dictionary, containing top 100 pairs")
 
 
 def main():
@@ -51,9 +52,13 @@ def main():
     # pairs wich lack posts at all
     diff = db_pairs_set.difference(posts_pairs_set)
 
+
+    if len(diff) > 0:
     # TODO: handle possible exeptions
-    top_unpublished_pair = find_pair_with_largest_vol(pairs_vol_dict, diff)
-    print(top_unpublished_pair)
+        pair, vol = find_pair_with_largest_vol(pairs_vol_dict, diff)
+    else:
+        pair = next(iter(cor_posts_dict))
+        vol = pairs_vol_dict[pair]
 
     # print("pairs set - posts set")
     # print(len(db_pairs_set.difference(posts_pairs_set)))
