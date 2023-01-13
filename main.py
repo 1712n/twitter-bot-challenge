@@ -10,9 +10,9 @@ import tweepy
 logger = logging.getLogger()
 logger.setLevel(logging.INFO)
 
-logger.info(111)
+logger.error(111)
 def log_df(legend, df, n=20, truncate=20, vertical=False):
-    logger.info(222)
+    logger.error(222)
     int_truncate = int(truncate)
     df_string = df._jdf.showString(n, int_truncate, vertical)
     logger.info(f'{legend}\n{df_string}')
