@@ -32,7 +32,8 @@ spark = (
     SparkSession.builder
     .master('local[*]')
     .config('spark.driver.extraClassPath', jars_path)
-    .config('spark.mongodb.read.connection.uri', f'{mongodb_uri}')
+    .config('spark.mongodb.read.connection.uri', mongodb_uri)
+    .config('spark.mongodb.write.connection.uri', mongodb_uri)
     .getOrCreate()
 )
 
@@ -165,15 +166,17 @@ log_df('Message texts', message_to_post, truncate=False)
 tweet_df = (
     message_to_post
     .join(
-        last_post
-        .select(
-            F.current_timestamp().alias('time'),
-            F.col('pair'),
-            F.col('tweet_id').alias('parent_tweet_id')),
+        last_post,
         on='pair',
         how='left')
-    .withColumn('tweet_id', F.lit(None))
+    .select(
+        F.current_timestamp().alias('time'),
+        F.col('pair'),
+        F.col('tweet_text'),
+        F.lit(None).alias('parent_tweet_id'),
+        F.col('tweet_id').alias('parent_tweet_id'))
 )
+log_df('Messages to post', tweet_df)
 
 twitter_client = tweepy.Client(
     consumer_key=tw_consumer_key,
@@ -185,6 +188,7 @@ twitter_client = tweepy.Client(
 # twitter posts limitation
 rows = tweet_df.limit(5).collect()
 for i, row in enumerate(rows):
+    tweet_text = row['tweet_text']
     parent_tweet_id = row['parent_tweet_id']
     try:
         if parent_tweet_id:
@@ -204,6 +208,7 @@ for i, row in enumerate(rows):
     except:
         logging.exception(msg=f'Tweet for {row["pair"]} failed')
 
+tweet_df = tweet_df.drop('parent_tweet_id')
 (
     tweet_df
     .write
@@ -214,4 +219,4 @@ for i, row in enumerate(rows):
     .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
     .save()
 )
-log_df('Records inserted in posts_db:', tweet_df)
+log_df('Records inserted in posts_db', tweet_df)
