@@ -204,7 +204,7 @@ for i, row in enumerate(rows):
     except:
         logging.exception(msg=f'Tweet for {row["pair"]} failed')
 
- (
+(
     tweet_df
     .write
     .format('mongodb')
