@@ -159,7 +159,7 @@ message_to_post = (
         F.col('pair'),
         F.concat('header', 'footer').alias('tweet_text'))
     .orderBy('pair')
-    .filter('pair = "BTC-USD"') # for test
+    # .filter('pair = "BTC-USD"') # for test
 )
 log_df('Message texts', message_to_post, truncate=False)
 
@@ -175,6 +175,7 @@ tweet_df = (
         F.col('tweet_text'),
         F.lit(None).alias('tweet_id'),
         F.col('tweet_id').alias('parent_tweet_id'))
+    .persist()
 )
 log_df('Messages to post', tweet_df)
 
