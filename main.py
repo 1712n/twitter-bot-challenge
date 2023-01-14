@@ -7,6 +7,8 @@ from pyspark.sql import SparkSession
 from pyspark.sql.window import Window
 import tweepy
 
+# this script should be separated to tasks/jobs for orchestrator
+
 logger = logging.getLogger(__name__)
 logger.addHandler(logging.StreamHandler())
 logger.setLevel(logging.INFO)
@@ -159,7 +161,6 @@ message_to_post = (
         F.col('pair'),
         F.concat('header', 'footer').alias('tweet_text'))
     .orderBy('pair')
-    # .filter('pair = "BTC-USD"') # for test
 )
 log_df('Message texts', message_to_post, truncate=False)
 
@@ -186,6 +187,7 @@ twitter_client = tweepy.Client(
     access_token_secret=tw_access_token_secret
 )
 
+# should be separate async job that reads posts_db and tweets records without tweet_id
 # twitter posts limitation
 rows = tweet_df.limit(5).collect()
 for i, row in enumerate(rows):
@@ -207,6 +209,7 @@ for i, row in enumerate(rows):
     except:
         logging.exception(msg=f'Tweet for {row["pair"]} failed')
 
+# shoulb be a job running before posting tweets
 tweet_df = tweet_df.drop('parent_tweet_id')
 (
     tweet_df
