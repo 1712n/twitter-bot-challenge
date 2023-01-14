@@ -81,6 +81,7 @@ posts_df = (
     .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
     .load()
 )
+posts_df = posts_df.filter('tweet_id is not null')
 
 w = Window.partitionBy('pair').orderBy(F.desc('time'))
 
