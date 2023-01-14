@@ -174,7 +174,6 @@ tweet_df = (
         how='left')
     .withColumn('tweet_id', F.lit(None))
 )
-log_df('Records for posts_db', tweet_df)
 
 twitter_client = tweepy.Client(
     consumer_key=tw_consumer_key,
@@ -189,13 +188,13 @@ for i, row in enumerate(rows):
     parent_tweet_id = row['parent_tweet_id']
     try:
         if parent_tweet_id:
-            # tweet = twitter_client.create_tweet(text=tweet_text, in_reply_to_tweet_id=parent_tweet_id)
+            tweet = twitter_client.create_tweet(text=tweet_text, in_reply_to_tweet_id=parent_tweet_id)
             pass
         else:
-            # tweet = twitter_client.create_tweet(text=tweet_text)
+            tweet = twitter_client.create_tweet(text=tweet_text)
             pass
         tweet_id = tweet.data['id']
-        tweet = tweet.withColumn(
+        tweet_df = tweet_df.withColumn(
             'tweet_id',
             F.when(
                 F.col('pair') == row['pair'],
@@ -204,3 +203,15 @@ for i, row in enumerate(rows):
                 F.col('tweet_id')))
     except:
         logging.exception(msg=f'Tweet for {row["pair"]} failed')
+
+ (
+    tweet_df
+    .write
+    .format('mongodb')
+    .mode('append')
+    .option('database', 'metrics')
+    .option('collection', 'posts_db')
+    .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
+    .save()
+)
+log_df('Records inserted in posts_db:', tweet_df)
