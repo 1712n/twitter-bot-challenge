@@ -80,6 +80,8 @@ posts_df = (
     .option('collection', 'posts_db')
     .option('partitioner', 'com.mongodb.spark.sql.connector.read.partitioner.SinglePartitionPartitioner')
     .load()
+    # spark do not inferring schema? same with _id that is most likely ObjectId
+    .withColumn('tweet_id', F.col('tweet_id').cast('bigint'))
 )
 posts_df = posts_df.filter('tweet_id is not null')
 
