@@ -173,7 +173,7 @@ tweet_df = (
         F.current_timestamp().alias('time'),
         F.col('pair'),
         F.col('tweet_text'),
-        F.lit(None).alias('parent_tweet_id'),
+        F.lit(None).alias('tweet_id'),
         F.col('tweet_id').alias('parent_tweet_id'))
 )
 log_df('Messages to post', tweet_df)
@@ -193,10 +193,8 @@ for i, row in enumerate(rows):
     try:
         if parent_tweet_id:
             tweet = twitter_client.create_tweet(text=tweet_text, in_reply_to_tweet_id=parent_tweet_id)
-            pass
         else:
             tweet = twitter_client.create_tweet(text=tweet_text)
-            pass
         tweet_id = tweet.data['id']
         tweet_df = tweet_df.withColumn(
             'tweet_id',
