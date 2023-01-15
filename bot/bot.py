@@ -41,6 +41,7 @@ class Bot:
         message = message_format(pair_to_post, volume_by_market)
         logging.info(f"Created Tweet message:\n{message}")
 
+        # TODO rely on database
         origin_tweet_id = self._twitter_client.origin_tweet_id(pair_to_post)
         logging.info(f"Found origin Tweet ID: {origin_tweet_id}")
         if not self._is_dev:

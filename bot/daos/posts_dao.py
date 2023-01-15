@@ -17,7 +17,7 @@ class PostsDao:
                 '$match': {
                     'pair': {
                         '$not': {
-                            '$type': 'array'
+                            '$type': 'array'  # TODO find process that add it, stop it and remove in collections
                         },
                         '$in': pairs
                     }
