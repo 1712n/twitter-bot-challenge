@@ -36,19 +36,18 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
                     'time': -1
                 }
             }, {
+                '$unwind': {
+                    'path': '$pair'
+                },
+            }, {
+                '$match': {
+                    'pair': {
+                        '$type': 'string'
+                    }
+                }
+            },  {
                 '$group': {
-                    '_id': {
-                        # taking into account that some fields are arrays
-                        '$cond': {
-                            'if': {
-                                '$isArray': '$pair'
-                            },
-                            'then': {
-                                '$first': '$pair'
-                            },
-                            'else': '$pair'
-                        }
-                    },
+                    '_id': '$pair', 
                     # saving latest post
                     'lastPost': {
                         '$first': '$$ROOT'
