@@ -14,7 +14,7 @@ logging.basicConfig(
 
 if __name__ == '__main__':
     logging.info("Prepare configuration...")
-    is_development = os.environ["IS_DEV_ENV"]
+    is_development = os.environ.get("IS_DEV_ENV", False)
 
     twClient = TwitterClient(os.environ["TW_ACCESS_TOKEN"],
                   os.environ["TW_ACCESS_TOKEN_SECRET"],
