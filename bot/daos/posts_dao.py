@@ -1,5 +1,8 @@
+import logging
 from datetime import datetime
 from typing import List
+
+from pymongo.errors import PyMongoError
 
 from bot.mongo_db_client import MongoDbClient
 
@@ -32,11 +35,20 @@ class PostsDao:
                 }
             }
         ]
-        return [p["_id"] for p in self._db.aggregate(pipeline)]
+        try:
+            return [p["_id"] for p in self._db.aggregate(pipeline)]
+        except PyMongoError as error:
+            logging.error(f"Can not get latest posted pairs. Pipeline: {pipeline}. Error: {error}")
+            raise
 
-    def save_tweet(self, pair: str, message: str) -> None:
-        self._db.insert_one({
-            "time": datetime.now(),
-            "tweet": message,
-            "pair": pair
-        })
+    def save_tweet(self, pair: str, message: str) -> str:
+        try:
+            result = self._db.insert_one({
+                "time": datetime.now(),
+                "tweet": message,
+                "pair": pair
+            })
+        except PyMongoError as error:
+            logging.error(f"Can not save tweet. Error: {error}")
+            raise
+        return str(result.inserted_id)

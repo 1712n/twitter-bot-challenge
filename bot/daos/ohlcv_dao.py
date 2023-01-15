@@ -1,4 +1,7 @@
+import logging
 from typing import List, Dict
+
+from pymongo.errors import PyMongoError
 
 from bot.mongo_db_client import MongoDbClient
 
@@ -39,7 +42,11 @@ class OhlcvDao:
             }
         ]
 
-        return [p["_id"] for p in self._db.aggregate(pipeline)]
+        try:
+            return [p["_id"] for p in self._db.aggregate(pipeline)]
+        except PyMongoError as error:
+            logging.error(f"Can not get top by compound volume. Pipeline: {pipeline}. Error: {error}")
+            raise
 
     def volume_by_markets(self, pair: str) -> Dict[str, int]:
         pair_symbol, pair_base = pair.lower().split("-")
@@ -65,4 +72,8 @@ class OhlcvDao:
                 }
             }
         ]
-        return {x["_id"]: x["venueVolume"] for x in self._db.aggregate(pipeline)}
+        try:
+            return {x["_id"]: x["venueVolume"] for x in self._db.aggregate(pipeline)}
+        except PyMongoError as error:
+            logging.error(f"Can not get volume by markets. Pipeline: {pipeline}. Error: {error}")
+            raise

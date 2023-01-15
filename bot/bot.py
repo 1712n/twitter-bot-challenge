@@ -44,6 +44,7 @@ class Bot:
         origin_tweet_id = self._twitter_client.origin_tweet_id(pair_to_post)
         logging.info(f"Found origin Tweet ID: {origin_tweet_id}")
         if not self._is_dev:
-            self._twitter_client.post(message, origin_tweet_id)
-            self._posts_dao.save_tweet(pair_to_post, message)
-        logging.info("Bot finish")
+            tweet_id = self._twitter_client.post(message, origin_tweet_id)
+            logging.info(f"Tweet {tweet_id} posted")
+            tweet_object_id = self._posts_dao.save_tweet(pair_to_post, message)
+            logging.info(f"Tweet {tweet_id} saved with ObjectId: {tweet_object_id}")
