@@ -1,0 +1,8 @@
+# For mongodb
+pymongo[srv]
+
+# For loading environment variables
+python-dotenv
+
+# For reading logging config
+pyyaml

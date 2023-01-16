@@ -1,76 +1,31 @@
-# Twitter Bot Challenge
+It is an attempt to solve the problem: 
+MarketCapBot - Automate posting on Twitter
 
-## To start
+# Task
 
-**Send your resume, Github username and a link to this challenge to [challenge-submission@blockshop.org](mailto:challenge-submission@blockshop.org). Then we'll add you to collaborators and share all necessary credentials.**
+https://github.com/1712n/challenge/issues/86
 
-## What's next?
+# Project structure
+```
+/core
+    config.py       - Settings 
+    log.py          - Logging
+/db                 
+    session.py      - mongodb connection
+/tests              - Tests will be here
 
-If you are ready with your branch - create a pull request and assign it to @sofiasedlova and @darknessest for review. As soon as we get a good enough solution from a candidate, we start the interviewing process.
-
-
-### Github Secrets for Actions
-
-#### Description
-
-For this challenge you have a Authentication Tokens (Access Token and Secret) and Consumer Keys (API Key and Secret), 
-so you can only use [OAuth 1.0a](https://developer.twitter.com/en/docs/authentication/oauth-1-0a) for authentication.
-
-Authentication Tokens are stored in `TW_ACCESS_TOKEN` and `TW_ACCESS_TOKEN_SECRET` respectivelly.
-
-Consumer Keys are stored in `TW_CONSUMER_KEY` and `TW_CONSUMER_KEY_SECRET` respectively.
-
-The MongoDB credentials are stored in `MONGODB_USER` and `MONGODB_PASSWORD`, also the cluster's address is stored in `MONGO_DB_ADDRESS`.
-
-Make sure you are using the latest [PyMongo](https://github.com/mongodb/mongo-python-driver) with srv support, you can install it with:
-
-```bash
-pip install -U 'pymongo[srv]'
+.env                - Environment variables
+loggin_config.yaml  - Configuration file for logging
+requirements.txt 
 ```
 
-You can find a Github Action template [here](.github/workflows/gh-action-template.yml), please make sure you copy it to your branch and change the name of the branch in the yaml file. This will help the action's execution. 
+# Completed
 
+It has logging.
+It can query mongodb.
 
-#### Usage
+# Last problem
 
-To pass Github Secrets to your action, you need to specify the secrets and their corresponding names like following:
+# TODO
 
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-
-    steps:
-
-      - name: Run Python Code
-        env:
-          MONGODB_USER: ${{ secrets.MONGODB_USER }}
-          TW_BEARER_TOKEN: ${{ secrets.TW_BEARER_TOKEN }}
-        run: |
-            python3 main.py
-```
-
-
-
-You can access environment variables in Python like that:
-
-```python
-import os
-
-bearer_token = os.environ["TW_BEARER_TOKEN"]
-```
-
-
-URI for connecting to the MongoDB cluster can be constructed in the following way:
-
-```python
-from pymongo import MongoClient
-
-user = os.environ["MONGODB_USER"]
-password = os.environ["MONGODB_PASSWORD"]
-address = os.environ["MONGO_DB_ADDRESS"]
-
-uri = f"mongodb+srv://{user}:{password}@{address}"
-client = MongoClient(uri)
-
-```
+>>>>>>> 1302405 (Started)
