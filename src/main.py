@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO)
 
 def main():
     db = MongoDatabase()
-    twitter = Twitter()
+    twitter =  None #Twitter()
     bot = MarketCapBot(db=db, twitter=twitter)
     bot.run()
 
