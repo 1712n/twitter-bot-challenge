@@ -2,7 +2,7 @@ name: Template CryptoCapBot Python application
 
 on:
   push:
-    branches: ["my-branch-name"] # TODO: rename
+    branches: ["dertod28"]
 
 jobs:
   build:
@@ -27,6 +27,7 @@ jobs:
           TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
           TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
           TW_CONSUMER_KEY_SECRET: ${{ secrets.TW_CONSUMER_KEY_SECRET }}
-          # TODO: add more
+          MONGODB_USER: ${{ secrets.MONGODB_USER }}
+          TW_BEARER_TOKEN: ${{ secrets.TW_BEARER_TOKEN }}
         run: |
           python main.py
