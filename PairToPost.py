@@ -1,27 +1,22 @@
 from pymongo import MongoClient
 import datetime
 
-class SomeClass():
+class PairToPost():
     """
     class description will be here later.
-    'SomeClass' is a draft name. THE BETTER NAME FOR THE CLASS IS STILL BEING FORMULATED.
+    'PairToPost' is a draft name. THE BETTER NAME FOR THE CLASS IS STILL BEING FORMULATED.
     """
     def __init__(self, user: str, password: str, address: str) -> None:
-        self.user = user
-        self.password = password
-        self.address = address
-        self.uri = f"mongodb+srv://{self.user}:{self.password}@{self.address}"
-        self.client = MongoClient(self.uri)
+        self.client = MongoClient(f"mongodb+srv://{user}:{password}@{address}")
         self.db = self.client['metrics']
         self.col_ohlcv = self.db['ohlcv_db']
         self.col_posts = self.db['posts_db']
-        self.pair_to_post_data = {}
-        self.message_body = ""
+        self.pair_document = {}
 
-    def get_pair_to_post_data(self, days_amount: int=1, top_selection_limit: int=100) -> None:
+    def get_pair_to_post(self, days_amount: int=1, top_selection_limit: int=100) -> None:
         """
         This method performs an aggregation pipeline to get the pair_to_post \
-        data which is stored as a dict in pair_to_post_data property of a class instance.
+        data which is stored as a dict in pair_document property of a class instance.
 
         Arguments:
         days_amount - 1st pos. arg. - number of days to limit an initial \
@@ -241,23 +236,8 @@ class SomeClass():
                 }
             ]
         )
-        self.pair_to_post_data = cmd_cursor.next()
+        self.pair_document = cmd_cursor.next()
         cmd_cursor.close()
-
-    def compose_message_to_post(self) -> None:
-        """Composes a message body for a tweet"""
-        title = f"Top Market Venues for {self.pair_to_post_data.get('pair_symbol').upper()}-{self.pair_to_post_data.get('pair_base').upper()}:\n"
-        top_5_markets =""
-        other_markets_percent = 0
-        if len(self.pair_to_post_data.get("markets")) >=5:
-            for i in range(5):
-                top_5_markets += f"{self.pair_to_post_data.get('markets')[i].get('marketVenue')} {self.pair_to_post_data.get('markets')[i].get('market_comp_vol_percent')}%\n"
-            for i in range(5, len(self.pair_to_post_data.get("markets"))):
-                other_markets_percent += self.pair_to_post_data.get("markets")[i].get("market_comp_vol_percent")
-        else:
-            for market in self.pair_to_post_data.get('markets'):
-                top_5_markets += f"{market.get('marketVenue')} {market.get('market_comp_percent')}%\n"
-        self.message_body = title + top_5_markets + f"Others {other_markets_percent:.2f}%\n"
 
     def check_new_ohlcv_documents(self, pair_base: str, pair_symbol: str, latest_post_datetime: "datetime") -> bool:
         """It's an auxiliary method. Checks if there is at least one new ohlcv documents for a pair since latest_post_datetime"""
