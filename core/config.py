@@ -46,7 +46,7 @@ class Settings:
                 else:
                     log.logger.debug(f"Couldn't getenv variable: {attr}")
                     raise Exception(f"Couldn't getenv environment")
-
+        finally:
             self.MONGODB_URI: str = (
                 f"mongodb+srv://{quote_plus(self.MONGODB_USER)}:"
                 f"{quote_plus(self.MONGODB_PASSWORD)}@"
