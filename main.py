@@ -342,3 +342,7 @@ def main():
     except Exception as error:
         logger.error(f'Adding post to db failed: {error}')
         sys.exit(1)
+
+
+if __name__ == '__main__':
+    main()
