@@ -1,4 +1,6 @@
 # Project logging
+import pymongo.database
+
 from core.log import log
 # For mongodb
 from pymongo import MongoClient
@@ -16,8 +18,15 @@ def main():
     client: MongoClient = get_db()
     try:
         log.logger.debug('list_databases...')
-        for db in client.list_databases():
-            pprint.pprint(db)
+        for db_item in client.list_databases():
+            #pprint.pprint(db_item)
+            db_name = db_item['name']
+            log.logger.debug(f"db: {db_name}")
+
+            db: pymongo.database.Database = client[db_name]
+            for coll in db.list_collection_names():
+                log.logger.debug(f"collection: {coll}")
+
     except Exception as e:
         log.logger.debug(f"list_databases... failed: {e}")
 
