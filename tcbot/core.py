@@ -191,6 +191,10 @@ class TCBot:
             return None
 
     def save_post_to_db(self, pair: str, tweet_id: str | None, message: str):
+        if tweet_id is None:
+            logger.error("Message can not be saved to 'posts_db' without a valid Tweet ID.")
+            return
+
         logger.info("Saving message to 'posts_db'...")
 
         try:
