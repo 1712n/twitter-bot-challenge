@@ -2,7 +2,7 @@ name: MarkedCupBoat Python application
 
 on:
   push:
-    branches: ["dev"]
+    branches: ["lev.370x"]
 
 jobs:
   build:
