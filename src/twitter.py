@@ -1,0 +1,6 @@
+import tweepy
+from config import TWITTER_ACCESS_TOKEN, TWITTER_ACCESS_TOKEN_SECRET, TWITTER_CONSUMER_SECRET, TWITTER_CONSUMER_KEY
+import logging
+
+
+
