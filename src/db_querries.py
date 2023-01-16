@@ -47,7 +47,7 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
                 }
             },  {
                 '$group': {
-                    '_id': '$pair', 
+                    '_id': '$pair',
                     # saving latest post
                     'lastPost': {
                         '$first': '$$ROOT'
@@ -74,8 +74,9 @@ def gather_pair_data(pairs_col: collection.Collection, pair: str) -> OrderedDict
     try:
         symbol, base = pair.lower().split('-')
     except:
-        logger.error("Pair expected to be string in 'PAIR_SYMBOL-PAIR_BASE' format")
-        raise 
+        logger.error(
+            "Pair expected to be string in 'PAIR_SYMBOL-PAIR_BASE' format")
+        raise
 
     pair_data = pairs_col.aggregate([
         {
