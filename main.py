@@ -32,6 +32,7 @@ class OldestLastPostsForPairs(OrderedDict):
 
         self.__oldest_post_iterator = iter(self)
 
+    # returns None if there's no pairs left to interate to
     def next_oldest_post_pair(self):
         return next(self.__oldest_post_iterator, None)
 
@@ -43,10 +44,11 @@ class PairMarketStats(OrderedDict):
         remains = 100
         for market in self.keys():
             market_vol_percens = self[market] / total_vol * 100
-            remains -= market_vol_percens
+            if market_vol_percens >= 0.01:
+                remains -= market_vol_percens
 
-            # forming a message
-            message += f"{market.title()} {market_vol_percens:.2f} \n"
+                # forming a message
+                message += f"{market.title()} {market_vol_percens:.2f} \n"
 
         if remains >= 0.01:
             message += f"Others {remains:.2f} \n"
@@ -68,39 +70,69 @@ def main():
         # The ping command is cheap and does not require auth.
         client["metrics"].command('ping')
     except PyMongoError:
-        logging.error("Database connection failure:")
+        logger.error("Database connection failure:")
         raise
 
-    # TODO: handle possible exeptions
-    ohlcv_col = client["metrics"]["ohlcv_db"]
-    posts_col = client["metrics"]["posts_db"]
+    try:
+        ohlcv_col = client["metrics"]["ohlcv_db"]
+        posts_col = client["metrics"]["posts_db"]
 
-    # TODO: handle possible exeptions
-    pairs_vollume_dict = TopPairsByVolume(querry.get_top_pairs(ohlcv_col))
-    # TODO: handle possible exeptions
-    pairs_last_posts_dict = OldestLastPostsForPairs(querry.get_posts_for_pairs(
-        posts_col, list(pairs_vollume_dict.keys())))
+        pairs_vollume_dict = TopPairsByVolume(querry.get_top_pairs(ohlcv_col))
+        pairs_last_posts_dict = OldestLastPostsForPairs(querry.get_posts_for_pairs(
+            posts_col, list(pairs_vollume_dict.keys())))
+    except PyMongoError:
+        logger.error("Database queries failure:")
+        raise
 
     # pairs wich lack posts at all
-    diff = pairs_vollume_dict.diff(set(pairs_last_posts_dict.keys()))
+    unposted_pairs = pairs_vollume_dict.diff(set(pairs_last_posts_dict.keys()))
+    logger.info(f"There's {len(unposted_pairs)} unposted pairs")
 
-    if len(diff) > 0:
-        # TODO: handle possible exeptions
-        pair, vol = pairs_vollume_dict.find_largest_among(diff)
-    else:
-        pair = pairs_last_posts_dict.next_oldest_post_pair()
-        vol = pairs_vollume_dict[pair]
+    job_done = False
+    while (job_done == False):
+        if len(unposted_pairs) > 0:
+            pair, vol = pairs_vollume_dict.find_largest_among(unposted_pairs)
 
-    if type(pair) != str or type(vol) != float:
-        logger.error("Coudn't deside between unposted and oldest posted pairs")
-        raise Exception("Wrong types!")
+            '''if job ended up undone for some reason, we shouldn't 
+            be cycling on the same pair and move to another'''
+            unposted_pairs -= {pair}
 
-    # TODO: handle possible exeptions
-    pair_market_stats = PairMarketStats(
-        querry.gather_pair_data(ohlcv_col, pair))
+            logger.debug(
+                f"Working with unposted pair {pair}, unposted pairs remaining: {len(unposted_pairs)}")
 
-    message = pair_market_stats.compose_message(pair, vol)
-    print(message)
+            try:
+                pair_market_stats = PairMarketStats(
+                    querry.gather_pair_data(ohlcv_col, pair))
+            except:
+                logger.error(
+                    "Database query for Pair's market statistics failure:")
+                raise
+
+            message = pair_market_stats.compose_message(pair, vol)
+            logger.debug(f"Message for pair {pair}:\n{message}")
+
+            job_done = True
+        else:
+            pair = pairs_last_posts_dict.next_oldest_post_pair()
+            if pair == None:
+                logger.error(f"There's no posts for pairs left")
+                raise Exception("Incorrect data gathered!")
+            vol = pairs_vollume_dict[pair]
+
+            logger.debug(f"Working with already posted pair {pair}")
+
+            try:
+                pair_market_stats = PairMarketStats(
+                    querry.gather_pair_data(ohlcv_col, pair))
+            except:
+                logger.error(
+                    "Database query for Pair's market statistics failure:")
+                raise
+
+            message = pair_market_stats.compose_message(pair, vol)
+            logger.debug(f"Message for pair {pair}:\n{message}")
+
+            job_done = True
 
 
 if __name__ == "__main__":
