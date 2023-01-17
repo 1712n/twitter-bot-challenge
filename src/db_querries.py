@@ -24,7 +24,7 @@ def get_top_pairs(pairs_col: collection.Collection) -> OrderedDict:
     for pair in pairs_total_vol_list:
         pairs_dict[pair['_id']] = pair['volume_sum']
 
-    logger.debug(
+    logger.info(
         f"Top pairs querry executed successfully: {len(pairs_dict.keys())} pair-vollume's total")
 
     return pairs_dict
@@ -71,19 +71,12 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
     for post in posts_list:
         posts_dict[post['_id']] = post['lastPost']
 
-    logger.debug(
+    logger.info(
             f"Lattest post for pairs querry executed successfully: {len(posts_dict.keys())} pair-post's total")
     return posts_dict
 
 
-def gather_pair_data(pairs_col: collection.Collection, pair: str) -> OrderedDict:
-    try:
-        symbol, base = pair.lower().split('-')
-    except:
-        logger.error(
-            "Pair expected to be string in 'PAIR_SYMBOL-PAIR_BASE' format")
-        raise
-
+def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -> OrderedDict:
     pair_data = pairs_col.aggregate([
         {
             '$match': {
@@ -112,6 +105,6 @@ def gather_pair_data(pairs_col: collection.Collection, pair: str) -> OrderedDict
     for market in pair_data:
         pair_stats[market['_id']] = market['venue_vol']
 
-    logger.debug(
+    logger.info(
             f"Top 5 markets vollume querry for pair {pair} executed successfully: {len(pair_stats.keys())} pair-markets's total")
     return pair_stats
