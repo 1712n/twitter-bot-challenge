@@ -12,67 +12,8 @@ from twitter import Twitter
 class MarketCapBot:
     def __init__(self, db: MongoDatabase, twitter: Twitter):
         self.twitter = twitter
-        self.ohlcv_db = db.ohlcv()
-        self.posts_db = db.posts()
-        logging.info('Bot started...')
-
-    def get_top_pairs_by_amount(self, amount: int = 100) -> list[str]:
-        result = list(self.ohlcv_db.aggregate([
-            {
-                "$match": {
-                    "granularity": "1h"
-                }
-            },
-            {
-                "$group": {
-                    "_id": {
-                        "pair": {"$toUpper": {"$concat": ["$pair_symbol", "-", "$pair_base"]}},
-                    },
-                    "volume_sum": {
-                        "$sum": {
-                            "$toDouble": "$volume"
-                        }
-                    }
-                }
-            },
-            {
-                "$sort": {
-                    "volume_sum": pymongo.DESCENDING
-                }
-            },
-            {
-                "$limit": amount
-            }
-        ]))
-
-        if len(result) == 0:
-            raise ValueError("No pairs found!")
-
-        return [item['_id']['pair'] for item in result]
-
-
-    def get_latest_posted_pairs(self, top_pairs: list[str]) -> list[tuple]:
-        result = self.posts_db.aggregate([
-            {
-                "$match": {
-                    "pair": {"$in": top_pairs}
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$pair",
-                    "datetime": {
-                        "$max": "$time"
-                    }
-                }
-            },
-            {
-                "$sort": {
-                    "datetime": pymongo.DESCENDING
-                }
-            },
-        ])
-        return [(item["_id"], item['datetime']) for item in result if isinstance(item["_id"], str)]
+        self.db = db
+        logging.info('Bot is running...')
 
 
     def get_pair_to_post(self, top_pairs: list[str], latest_posted_pairs: list[tuple]) -> str:
@@ -82,57 +23,56 @@ class MarketCapBot:
         return not_posted_pairs.pop()
 
     
-    def get_pair_market_venues(self, pair_to_post: str) -> list[dict]:
-        pair_symbol = pair_to_post.split('-')[0].lower()
-        pair_base = pair_to_post.split('-')[1].lower()
-        result = list(self.ohlcv_db.aggregate([
-            {
-                "$match": {
-                    "granularity": "1h",
-                    "pair_symbol": pair_symbol,
-                    "pair_base": pair_base
-                }
-            },
-            {
-                "$group": {
-                    "_id": "$marketVenue",
-                    "volume": {
-                        "$max": {
-                            "datetime": "$timestamp",
-                            "value": {"$toDouble": "$volume"},
-                        }
-                    }
-                }
-            },
-            {
-                "$sort": {
-                    "volume.value": pymongo.DESCENDING
-                }
-            }
-        ]))
-
-        return result
-
-    
-    def get_message_to_post(self, pair_to_post: str, pair_market_venues: list[dict]) -> str:
-        message_to_post = f"Top Market Venues for {pair_to_post}:\n"
+    def prepare_message(self, pair_to_post: str, pair_market_venues: list[dict]) -> str:
+        message = f"Top Market Venues for {pair_to_post}:\n"
 
         total_volume = sum(item['volume']['value'] for item in pair_market_venues)
 
         for item in pair_market_venues[:5]:
-            message_to_post += f"{item['_id'].capitalize()} {round(item['volume']['value'] / total_volume * 100, 2)}%\n"
-        return message_to_post
+            message += f"{item['_id'].capitalize()} {round(item['volume']['value'] / total_volume * 100, 2)}%\n"
+        
+        total_left = sum(item['volume']['value'] for item in pair_market_venues[5:])
+        message += f"Others {round(total_left / total_volume * 100, 2)}%"
 
+        return message
+
+    
+    def tweet_message(self, pair_to_post: str, message_to_post: str) -> str:
+
+        existed_tweet = list(self.db.posts().find(
+            {'pair': pair_to_post, 'tweet_id': {'$exists': True}}
+        ).sort('time', pymongo.DESCENDING).limit(1))
+
+        if len(existed_tweet) == 0:
+            response = self.twitter.new_tweet(message_to_post)
+            return response.data.get('id')
+        else:
+            response = self.twitter.reply_to(message_to_post, existed_tweet[0]['tweet_id'])
+            return response.data.get('id')
+
+        
+    def save_message_to_posts_db(self, pair: str, tweet_id: str, tweet_text: str) -> None:
+        current_time = datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M")
+        post = {
+            'pair': pair,
+            'tweet_text': tweet_text,
+            'time': datetime.datetime.fromisoformat(current_time),
+            'tweet_id': tweet_id
+        }
+        self.db.add_post(post)
+
+    
 
     def run(self):
         try:
-            top_pairs = self.get_top_pairs_by_amount()
-            latest_posted_pairs = self.get_latest_posted_pairs(top_pairs)
+            top_pairs = self.db.get_top_pairs_by_amount(100)
+            latest_posted_pairs = self.db.get_latest_posted_pairs(top_pairs)
             pair_to_post = self.get_pair_to_post(top_pairs, latest_posted_pairs)
-            pair_market_venues = self.get_pair_market_venues(pair_to_post)
-            message_to_post = self.get_message_to_post(pair_to_post, pair_market_venues)
+            market_venues = self.db.get_market_venues(pair_to_post)
+            message_to_post = self.prepare_message(pair_to_post, market_venues)
+            tweet_id = self.tweet_message(pair_to_post, message_to_post)
+            self.save_message_to_posts_db(pair_to_post, tweet_id, message_to_post)
 
-            print(message_to_post)
 
         except (TweepyException, PyMongoError) as e:
             logging.error(f'Cannot Run a bot because of: {e}')
