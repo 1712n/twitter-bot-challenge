@@ -1,0 +1,4 @@
+mongodb:
+  dbname: "metrics"
+  pairs: "ohlcv_db"
+  posts: "posts_db"
