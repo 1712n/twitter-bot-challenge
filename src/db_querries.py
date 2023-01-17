@@ -72,7 +72,7 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
         posts_dict[post['_id']] = post['lastPost']
 
     logger.info(
-            f"Lattest post for pairs querry executed successfully: {len(posts_dict.keys())} pair-post's total")
+        f"Lattest post for pairs querry executed successfully: {len(posts_dict.keys())} pair-post's total")
     return posts_dict
 
 
@@ -106,5 +106,5 @@ def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -
         pair_stats[market['_id']] = market['venue_vol']
 
     logger.info(
-            f"Top 5 markets vollume querry for pair {pair} executed successfully: {len(pair_stats.keys())} pair-markets's total")
+        f"Top 5 markets vollume querry for pair {symbol}-{base} executed successfully: {len(pair_stats.keys())} pair-markets's total")
     return pair_stats
