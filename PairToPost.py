@@ -13,6 +13,7 @@ class PairToPost():
         self.col_ohlcv = self.db['ohlcv_db']
         self.col_posts = self.db['posts_db']
         self.pair_document = {}
+        self.last_inserted_id = None
 
     def get_pair_to_post(self, days_amount: int=1, top_selection_limit: int=100) -> None:
         """
@@ -258,6 +259,7 @@ class PairToPost():
             "pair": new_post_data["pair"],
             "text": new_post_data["text"],
             "timestamp": new_post_data["timestamp"],
-            "tweet_id": new_post_data["tweet_id}"]
+            "tweet_id": new_post_data["tweet_id"]
         })
+        self.last_inserted_id = insert_result.inserted_id
         return isinstance(insert_result, InsertOneResult) and isinstance(insert_result.inserted_id, ObjectId)

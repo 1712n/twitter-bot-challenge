@@ -1,8 +1,6 @@
-from dotenv import load_dotenv
-load_dotenv()
 import os
-import PairToPost
-import MarketCapBot
+from PairToPost import PairToPost
+from MarketCapBot import MarketCapBot
 
 if __name__ == "__main__":
 
@@ -13,4 +11,6 @@ if __name__ == "__main__":
     bot.set_pair_to_post(pair_to_post)
     bot.compose_message_to_post()
     new_post_data = bot.create_tweet()
+    print(new_post_data)
     pair_to_post.add_post_to_collection(new_post_data)
+    print(pair_to_post.last_inserted_id)
