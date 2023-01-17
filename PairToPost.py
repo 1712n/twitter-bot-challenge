@@ -248,4 +248,5 @@ class PairToPost():
         """It's an auxiliary method. Returns a count of new ohlcv documents for a pair since latest_post_datetime"""
         return self.col_ohlcv.count_documents({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
 
-
+    def save_post(self) -> None:
+        pass
