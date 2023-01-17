@@ -38,7 +38,6 @@ class MarketCapBot:
 
     
     def tweet_message(self, pair_to_post: str, message_to_post: str) -> str:
-
         existed_tweet = list(self.db.posts().find(
             {'pair': pair_to_post, 'tweet_id': {'$exists': True}}
         ).sort('time', pymongo.DESCENDING).limit(1))
@@ -65,13 +64,14 @@ class MarketCapBot:
 
     def run(self):
         try:
-            top_pairs = self.db.get_top_pairs_by_amount(100)
+            top_pairs = self.db.get_top_pairs_by_amount()
             latest_posted_pairs = self.db.get_latest_posted_pairs(top_pairs)
             pair_to_post = self.get_pair_to_post(top_pairs, latest_posted_pairs)
             market_venues = self.db.get_market_venues(pair_to_post)
             message_to_post = self.prepare_message(pair_to_post, market_venues)
             tweet_id = self.tweet_message(pair_to_post, message_to_post)
             self.save_message_to_posts_db(pair_to_post, tweet_id, message_to_post)
+            logging.info(f'Successfully posted pair {pair_to_post} to Twitter and saved to posts_db!')
 
 
         except (TweepyException, PyMongoError) as e:

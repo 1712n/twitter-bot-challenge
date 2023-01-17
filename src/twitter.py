@@ -22,7 +22,3 @@ class Twitter:
 
     def reply_to(self, text, parent):
         return self.client.create_tweet(text=text, in_reply_to_tweet_id=parent)
-
-
-# twitter = Twitter()
-# twitter.new_tweet("Hello this is test tweet")

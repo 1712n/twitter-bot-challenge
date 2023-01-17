@@ -7,8 +7,8 @@ class MongoDatabase:
     def __init__(self):
         try:
             self.cluster = MongoClient(f'mongodb+srv://{MONGODB_USER}:{MONGODB_PASSWORD}@{MONGODB_CLUSTER_ADDRESS}')
-            self.ohlcv_db = self.cluster["metrics"]["posts_db"]
-            self.posts_db = self.cluster["metrics"]["ohlcv_db"]
+            self.ohlcv_db = self.cluster["metrics"]["ohlcv_db"]
+            self.posts_db = self.cluster["metrics"]["posts_db"]
             logging.info('Connected to MongoDB!')
 
         except PyMongoError as e:
@@ -23,7 +23,6 @@ class MongoDatabase:
     
     def add_post(self, post):
         self.posts_db.insert_one(post)
-        
 
     def get_top_pairs_by_amount(self, amount: int = 100) -> list[str]:
         result = list(self.ohlcv_db.aggregate([
@@ -110,7 +109,7 @@ class MongoDatabase:
             },
             {
                 "$sort": {
-                    "volume.value": pymongo.DESCENDING
+                    "volume.value": DESCENDING
                 }
             }
         ]))
