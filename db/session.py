@@ -10,7 +10,10 @@ from core.config import settings
 
 def get_db():
     log.logger.debug('Connecting to mongodb ...')
-    client = MongoClient(settings.MONGODB_URI)
+    client = MongoClient(
+        settings.MONGODB_URI,
+        serverSelectionTimeoutMS=settings.SERVERSELECTIONTIMEOUTMS
+    )
     try:
         # The ping command is cheap and does not require auth.
         client.admin.command('ping')
@@ -19,7 +22,10 @@ def get_db():
         log.logger.debug(f"Mongodb db name set: {settings.MONGODB_DBNAME}")
         return db
     except ConnectionFailure:
-        log.logger.debug("Mongodb server isn't available")
+        log.logger.critical("Mongodb server isn't available")
         client.close()
         return None
 
+
+def check_connection():
+    ...

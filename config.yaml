@@ -1,4 +1,9 @@
 mongodb:
+  # Timeout (in ms) for connection attempt to mongodb
+  serverselectiontimeoutms: 4000
+  # db name
   dbname: "metrics"
+  # collection name for instruments
   pairs: "ohlcv_db"
+  # collection name for posts
   posts: "posts_db"
