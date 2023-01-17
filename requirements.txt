@@ -4,5 +4,8 @@ pymongo[srv]
 # For loading environment variables
 python-dotenv
 
+# For loading config.yaml
+confuse
+
 # For reading logging config
 pyyaml

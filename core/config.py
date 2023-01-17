@@ -1,9 +1,13 @@
 # For environment settings
 import os
+import pprint
 from pathlib import Path
 from dotenv import load_dotenv
 # For mongodb connection string
 from urllib.parse import quote_plus
+
+# For settings from config.yaml
+import confuse
 
 # Logging
 from core.log import log
@@ -52,6 +56,17 @@ class Settings:
                 f"{quote_plus(self.MONGODB_PASSWORD)}@"
                 f"{self.MONGO_DB_ADDRESS}"
             )
+
+        try:
+            conf = confuse.Configuration(__name__)
+            conf.set_file('config.yaml')
+            self.MONGODB_DBNAME = conf['mongodb']['dbname'].get()
+            if self.MONGODB_DBNAME:
+                log.logger.debug(f"Found: MONGODB_DBNAME: {self.MONGODB_DBNAME}")
+            self.PAIRS_NAME = conf['mongodb']['pairs'].get()
+            self.POSTS_NAME = conf['mongodb']['posts'].get()
+        except Exception as e:
+                log.logger.debug(f"Failed to set: MONGODB_DBNAME from file. {e}")
 
 
 settings = Settings()
