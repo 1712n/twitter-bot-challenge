@@ -11,11 +11,13 @@ class MarketCapBot():
         self.message_body = ""
         self.response = None
         self.published_post = None
+        self.pair_to_post_id  = None
 
     def set_pair_to_post(self, pair_to_post: PairToPost) -> None:
         """Makes its own copy of pair_document for internal usage """
         if isinstance(pair_to_post, PairToPost):
             self.pair_document = copy.deepcopy(pair_to_post.pair_document)
+            self.pair_to_post_id = id(pair_to_post)
 
     def compose_message_to_post(self) -> None:
         """Composes a message body for a tweet"""
@@ -70,4 +72,5 @@ class MarketCapBot():
         return {"tweet_id": self.published_post.data.id,
                 "text": self.published_post.data.text,
                 "timestamp": self.published_post.data.created_at,
-                "pair": f"{self.pair_document['pair_symbol'].upper()}-{self.pair_document['pair_base'].upper()}"}
+                "pair": f"{self.pair_document['pair_symbol'].upper()}-{self.pair_document['pair_base'].upper()}",
+                "pair_to_post_id": self.pair_to_post_id}

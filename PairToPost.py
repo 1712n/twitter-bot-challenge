@@ -1,10 +1,11 @@
 from pymongo import MongoClient
+from pymongo.results import InsertOneResult
+from bson import ObjectId
 import datetime
 
 class PairToPost():
     """
-    class description will be here later.
-    'PairToPost' is a draft name. THE BETTER NAME FOR THE CLASS IS STILL BEING FORMULATED.
+    Represents a pair to post and performs required mongodb operations
     """
     def __init__(self, user: str, password: str, address: str) -> None:
         self.client = MongoClient(f"mongodb+srv://{user}:{password}@{address}")
@@ -248,5 +249,15 @@ class PairToPost():
         """It's an auxiliary method. Returns a count of new ohlcv documents for a pair since latest_post_datetime"""
         return self.col_ohlcv.count_documents({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
 
-    def save_post(self) -> None:
-        pass
+    def add_post_to_collection(self, new_post_data: dict) -> bool:
+        """Add a record into posts_db with info about a recently published tweet."""
+        if new_post_data["pair_to_post_id"] != id(self):
+            print("pair_to_post_id doesn't match")
+            return
+        insert_result = self.col_posts.insert_one({
+            "pair": new_post_data["pair"],
+            "text": new_post_data["text"],
+            "timestamp": new_post_data["timestamp"],
+            "tweet_id": new_post_data["tweet_id}"]
+        })
+        return isinstance(insert_result, InsertOneResult) and isinstance(insert_result.inserted_id, ObjectId)
