@@ -19,8 +19,9 @@ def main():
     try:
         colls = [settings.PAIRS_NAME, settings.POSTS_NAME]
         for coll in colls:
-            content = db[coll].find_one()
-            log.logger.debug(f"collection: {coll} find_one: {content}")
+            # content = db[coll].find_one()
+            for content in db[coll].find().limit(4):
+                log.logger.debug(f"collection: {coll} object: {content}")
     except Exception as e:
         log.logger.debug(f"list_databases... failed: {e}")
 
