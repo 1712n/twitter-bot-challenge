@@ -1,5 +1,5 @@
 import unittest
-from database import autoreconnect
+from database import handle_mongodb_errors
 import pymongo
 
 class TestAutoReconnectHandler(unittest.TestCase):
@@ -7,7 +7,7 @@ class TestAutoReconnectHandler(unittest.TestCase):
     def test_success(self):
         self.attempt = 0
 
-        @autoreconnect
+        @handle_mongodb_errors
         def mongodb_call(self):
             if self.attempt >= 3:
                 return True
@@ -17,12 +17,11 @@ class TestAutoReconnectHandler(unittest.TestCase):
         self.assertTrue(mongodb_call(self))
 
     def test_failure(self):
-        @autoreconnect
+        @handle_mongodb_errors
         def mongodb_call():
             raise pymongo.errors.AutoReconnect
 
-        with self.assertRaises(pymongo.errors.AutoReconnect):
-            mongodb_call()
+        self.assertEqual(mongodb_call(), None)
 
 
 if __name__ == '__main__':

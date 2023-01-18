@@ -2,31 +2,45 @@ import os
 import time
 import logging
 from pymongo import MongoClient
-from pymongo.errors import AutoReconnect
+from pymongo.errors import AutoReconnect, ConfigurationError, ConnectionFailure
 
 
-def autoreconnect(func):
+def handle_mongodb_errors(func):
     """A decorator to handle AutoReconnect exceptions.
 
     Tries to reconnect 5 times with increasing wait times, then fails. Number of
     reconnects can be changed via MONGODB_RECONNECT_ATTEMPTS environment variable.
     """
 
-    def _autoreconnect(*args, **kwargs):
+    def _handle_mongodb_errors(*args, **kwargs):
         max_attempts = os.environ.get("MONGODB_RECONNECT_ATTEMPTS", 5)
         for attempt in range(max_attempts):
             try:
                 return func(*args, **kwargs)
+
             except AutoReconnect:
                 logging.warning(
                     "Connecting to the database failed. Trying to reconnect...")
                 time.sleep(pow(2, attempt))
-        return func(*args, **kwargs)
 
-    return _autoreconnect
+            except ConnectionFailure as error:
+                logging.error("Connecting to the database failed. Cause: %s", str(error))
+                return None
+
+            except ConfigurationError as error:
+                logging.error("Database is configured incorrectly: %s", str(error))
+                return None
+
+            except Exception as error:
+                logging.error("A database operation failed. Cause: %s", str(error))
+                return None
+
+        return None
+
+    return _handle_mongodb_errors
 
 
-@autoreconnect
+@handle_mongodb_errors
 def connect_db():
     """Connects to MongoDB using credentials from environment vars.
 
@@ -45,7 +59,7 @@ def connect_db():
     return client
 
 
-@autoreconnect
+@handle_mongodb_errors
 def choose_pair(client):
     """Chooses a trading pair with big market volume that hasn't been posted for a while.
 
