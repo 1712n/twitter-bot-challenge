@@ -1,4 +1,4 @@
-def get_latest_posts():
+def get_latest_posts(top_pairs: list):
     ...
 
 

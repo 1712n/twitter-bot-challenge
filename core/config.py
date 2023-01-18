@@ -78,6 +78,7 @@ class Settings:
             # Mongodb collections names
             self.PAIRS_NAME = conf['mongodb']['pairs'].get()
             self.POSTS_NAME = conf['mongodb']['posts'].get()
+            self.TOP_LIMIT = conf['mongodb']['pairs_top_limit'].get()
 
             # Mongodb timeout serverSelectionTimeoutMS
             self.SERVERSELECTIONTIMEOUTMS: str = \
