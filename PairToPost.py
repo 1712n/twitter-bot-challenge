@@ -2,31 +2,37 @@ from pymongo import MongoClient
 from pymongo.results import InsertOneResult
 from bson import ObjectId
 import datetime
+from WorkFlowRecorder import WorkFlowRecorder
 
 class PairToPost():
     """
     Represents a pair to post and performs required mongodb operations
     """
-    def __init__(self, user: str, password: str, address: str) -> None:
+    def __init__(self, user: str, password: str, address: str, recorder: WorkFlowRecorder) -> None:
+        recorder.get_logged("Initialize connection to Mongo")
         self.client = MongoClient(f"mongodb+srv://{user}:{password}@{address}")
         self.db = self.client['metrics']
         self.col_ohlcv = self.db['ohlcv_db']
         self.col_posts = self.db['posts_db']
         self.pair_document = {}
         self.last_inserted_id = None
+        self.recorder = recorder
 
     def get_pair_to_post(self, days_amount: int=1, top_selection_limit: int=100) -> None:
         """
-        This method performs an aggregation pipeline to get the pair_to_post \
+        This method performs an aggregation pipeline to get the pair_to_post
         data which is stored as a dict in pair_document property of a class instance.
 
-        Arguments:
-        days_amount - 1st pos. arg. - number of days to limit an initial \
+        Parameters:
+
+        days_amount - 1st pos. arg. - number of days to limit an initial
         dataset. 1 by default.
 
-        top_selection_limit - 2nd  pos. arg. - amount of unique pairs \
+        top_selection_limit - 2nd  pos. arg. - amount of unique pairs
         sorted by desc order to get top n pairs.
         """
+        self.recorder.get_logged("method get_pair_to_post has started")
+
         cmd_cursor = self.col_ohlcv.aggregate(
             [
                 { # initial selection by granularity and days_amount
@@ -221,9 +227,8 @@ class PairToPost():
                             },
                             { # define the more convenient structure for every market in an array for a final doc.
                                 '$project': {
-                                    '_id': 0, 
-                                    'marketVenue': '$_id', 
-                                    'pair_comp_vol': 1, 
+                                    '_id': 0,
+                                    'marketVenue': '$_id',
                                     'market_comp_vol': 1,
                                     # getting the percent value of comp vol per market
                                     'market_comp_vol_percent': {
@@ -241,6 +246,44 @@ class PairToPost():
         self.pair_document = cmd_cursor.next()
         cmd_cursor.close()
 
+        self.recorder.get_logged("Selected pair data:\n"
+                                + f"pair_symbol: {self.pair_document.get('pair_symbol')}\n"
+                                + f"pair_base: {self.pair_document.get('pair_base')}\n"
+                                + f"\tlatest_post['pair']: {self.pair_document.get('pair')}\n"
+                                + f"\tlatest_post['timestamp']: {self.pair_document.get('timestamp')}\n"
+                                + f"\tlatest_post['tweet_id']: {self.pair_document.get('tweet_id')}\n"
+                                + f"markets:\n"
+                                + f"{self.pair_document.get('markets').__str__().replace(',', '\n').replace('{', '\t{')[1:-1]}"
+                                )
+
+        self.recorder.get_logged("method get_pair_to_post has finished")
+
+    def add_post_to_collection(self, new_post_data: dict) -> bool:
+        """
+        Add a record into posts_db with info about a recently published tweet.
+
+        Passed new_post_data dict should contain the following keys:\n
+       'pair', 'text', 'timestamp', 'tweet_id'
+        """
+
+        self.recorder.get_logged("method add_post_to_collection has started")
+
+        if new_post_data["pair_to_post_id"] != id(self):
+            self.recorder.get_logged(error_flag=True, message="pair_to_post_id doesn't match")
+            return
+
+        insert_result = self.col_posts.insert_one({
+            "pair": new_post_data["pair"],
+            "text": new_post_data["text"],
+            "timestamp": new_post_data["timestamp"],
+            "tweet_id": new_post_data["tweet_id"]
+        })
+        self.last_inserted_id = insert_result.inserted_id
+
+        self.recorder.get_logged(f"inserted_id: {self.last_inserted_id}")
+        self.recorder.get_logged("method add_post_to_collection has finished")
+        return isinstance(insert_result, InsertOneResult) and isinstance(insert_result.inserted_id, ObjectId)
+
     def check_new_ohlcv_documents(self, pair_base: str, pair_symbol: str, latest_post_datetime: "datetime") -> bool:
         """It's an auxiliary method. Checks if there is at least one new ohlcv documents for a pair since latest_post_datetime"""
         result = self.col_ohlcv.find_one({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
@@ -249,17 +292,3 @@ class PairToPost():
     def count_new_ohlcv_documents(self, pair_base: str, pair_symbol: str, latest_post_datetime: "datetime") -> int:
         """It's an auxiliary method. Returns a count of new ohlcv documents for a pair since latest_post_datetime"""
         return self.col_ohlcv.count_documents({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
-
-    def add_post_to_collection(self, new_post_data: dict) -> bool:
-        """Add a record into posts_db with info about a recently published tweet."""
-        if new_post_data["pair_to_post_id"] != id(self):
-            print("pair_to_post_id doesn't match")
-            return
-        insert_result = self.col_posts.insert_one({
-            "pair": new_post_data["pair"],
-            "text": new_post_data["text"],
-            "timestamp": new_post_data["timestamp"],
-            "tweet_id": new_post_data["tweet_id"]
-        })
-        self.last_inserted_id = insert_result.inserted_id
-        return isinstance(insert_result, InsertOneResult) and isinstance(insert_result.inserted_id, ObjectId)
