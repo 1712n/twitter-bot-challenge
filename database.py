@@ -60,11 +60,12 @@ def connect_db():
 
 
 @handle_mongodb_errors
-def choose_pair(client):
+def choose_pair(client, granularity="1h"):
     """Chooses a trading pair with big market volume that hasn't been posted for a while.
 
     Arguments:
         client (MongoClient): A database client.
+        granularity (str): Granularity of aggregated data. Equals '1h' by default.
 
     Returns:
         (string, float): Name of the chosen pair and its market volume.
@@ -73,6 +74,10 @@ def choose_pair(client):
     logging.info('Choosing a pair to post...')
     top_pairs_cursor = client['metrics']['ohlcv_db'].aggregate([
         {
+            '$match': {
+                'granularity': granularity
+            }
+        }, {
             '$sort': {
                 'timestamp': -1
             }
@@ -211,12 +216,14 @@ def choose_pair(client):
     return chosen_pair, top_pairs[chosen_pair]
 
 
-def get_markets(client, pair):
+@handle_mongodb_errors
+def get_markets(client, pair, granularity="1h"):
     """Returns all markets with volumes for a given pair.
 
     Arguments:
-        client: A database client.
-        pair: A string representing a trading pair.
+        client (MongoClient): A database client.
+        pair (str): A string representing a trading pair.
+        granularity (str): Granularity of aggregated data. Equals '1h' by default.
     Returns:
         dict: Keys are market's names, values are their volumes.
     """
@@ -227,7 +234,8 @@ def get_markets(client, pair):
         {
             '$match': {
                 'pair_base': pair_base, 
-                'pair_symbol': pair_symbol
+                'pair_symbol': pair_symbol,
+                'granularity': granularity
             }
         }, {
             '$sort': {
