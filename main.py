@@ -12,7 +12,7 @@ import pprint
 from db.session import get_db
 from core.config import settings
 # Logic
-from util.instruments import get_top_pairs
+from util.pairs import get_top_pairs
 from util.posts import get_latest_posts
 from util.posts import select_pair
 from util.posts import add_message
