@@ -9,3 +9,6 @@ confuse
 
 # For reading logging config
 pyyaml
+
+# For testing
+# pytest
