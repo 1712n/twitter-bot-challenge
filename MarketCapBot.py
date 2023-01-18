@@ -28,7 +28,7 @@ class MarketCapBot():
         other_markets_percent = 0
         if len(self.pair_document["markets"]) >=5:
             for i in range(5):
-                top_5_markets += f"{self.pair_document['markets'][i]['marketVenue']} {self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
+                top_5_markets += f"{self.pair_document['markets'][i]['marketVenue'].capitalize()} {self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
             for i in range(5, len(self.pair_document["markets"])):
                 other_markets_percent += self.pair_document["markets"][i]["market_comp_vol_percent"]
         else:
