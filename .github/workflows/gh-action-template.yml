@@ -2,7 +2,8 @@ name: Template CryptoCapBot Python application
 
 on:
   push:
-    branches: ["boris_ivanov"] # TODO: rename
+    #branches: ["boris_ivanov"]
+    branches: ["branch-name"]
 
 jobs:
   build:
