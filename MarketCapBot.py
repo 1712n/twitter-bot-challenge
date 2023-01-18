@@ -23,9 +23,11 @@ class MarketCapBot():
 
     def compose_message_to_post(self) -> None:
         """Composes a message body for a tweet"""
+
         title = f"Top Market Venues for {self.pair_document['pair_symbol'].upper()}-{self.pair_document['pair_base'].upper()}:\n"
         top_5_markets =""
         other_markets_percent = 0
+
         if len(self.pair_document["markets"]) >=5:
             for i in range(5):
                 top_5_markets += f"{self.pair_document['markets'][i]['marketVenue'].capitalize()} {self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
@@ -34,6 +36,7 @@ class MarketCapBot():
         else:
             for market in self.pair_document['markets']:
                 top_5_markets += f"{market['marketVenue']} {market['market_comp_percent']}%\n"
+
         self.message_body = title + top_5_markets + f"Others {other_markets_percent:.2f}%\n"
 
     def create_tweet(self) -> dict:
@@ -48,11 +51,13 @@ class MarketCapBot():
             if "id" not in self.response.data or len(self.response.data["id"]) == 0:
                 print("Something went wrong. Response returned without tweet_id.\n" \
                     f"Returned errors:\n{self.response.errors}")
+
         # if the latest related post has tweet_id field then post a reply in the same thread
         # backlog: add error handling
         elif "tweet_id" in self.pair_document["latest_post"] and self.pair_document["latest_post"]["tweet_id"] != None:
             self.response = self.client.create_tweet(text=self.message_body,
                 in_reply_to_tweet_id=self.pair_document["latest_post"]["tweet_id"], user_auth=True)
+
         # in case of there is no tweet_id field in the latest_post, then we find the one and post a reply in the same thread
         # backlog: add error handling
         else:
@@ -60,6 +65,7 @@ class MarketCapBot():
             next_token = None
             bot_id = self.client.get_me(user_auth=True).data.id
             proceed = True
+
             # check every tweet(in order from the newest to oldest) until either find the last published tweet for the pair or next_token runs out
             while proceed:
                 search_result = self.client.get_users_tweets(bot_id, pagination_token=next_token, max_results=100, user_auth=True, tweet_fields=["created_at"])
@@ -72,14 +78,17 @@ class MarketCapBot():
                     next_token = search_result.meta["next_token"]
                 else:
                     proceed = False
+
             # if no related tweet was found, then just create the new one
             if tweet_to_reply == None:
                 self.response = self.client.create_tweet(text=self.message_body, user_auth=True)
             else:
                 self.response = self.client.create_tweet(text=self.message_body, in_reply_to_tweet_id=tweet_to_reply, user_auth=True)
+
         # retreive new post related data to put the ones in a returned dict
         self.published_post = self.client.get_tweet(self.response.data["id"], user_auth=True,
             tweet_fields=["created_at"])
+
         return {"tweet_id": str(self.published_post.data.id),
                 "text": self.published_post.data.text,
                 "timestamp": self.published_post.data.created_at,
