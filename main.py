@@ -5,13 +5,28 @@ from WorkFlowRecorder import WorkFlowRecorder
 
 if __name__ == "__main__":
 
-    pair_to_post = PairToPost(os.environ["MONGODB_USER"], os.environ["MONGODB_PASSWORD"], os.environ["MONGO_DB_ADDRESS"])
-    bot = MarketCapBot(os.environ["TW_CONSUMER_KEY"], os.environ["TW_CONSUMER_KEY_SECRET"], os.environ["TW_ACCESS_TOKEN"], os.environ["TW_ACCESS_TOKEN_SECRET"])
+    recorder = WorkFlowRecorder()
+    recorder.get_logged("Start main workflow")
+
+    pair_to_post = PairToPost(user=os.environ["MONGODB_USER"],
+                                password=os.environ["MONGODB_PASSWORD"],
+                                address=os.environ["MONGO_DB_ADDRESS"],
+                                recorder=recorder)
+
+    bot = MarketCapBot(consumer_key=os.environ["TW_CONSUMER_KEY"],
+                        consumer_secret=os.environ["TW_CONSUMER_KEY_SECRET"],
+                        access_token=os.environ["TW_ACCESS_TOKEN"],
+                        access_token_secret=os.environ["TW_ACCESS_TOKEN_SECRET"],
+                        recorder=recorder)
 
     pair_to_post.get_pair_to_post()
+
     bot.set_pair_to_post(pair_to_post)
+
     bot.compose_message_to_post()
+
     new_post_data = bot.create_tweet()
-    print(new_post_data)
+
     pair_to_post.add_post_to_collection(new_post_data)
-    print(pair_to_post.last_inserted_id)
+
+    recorder.get_logged("Stop execution")
