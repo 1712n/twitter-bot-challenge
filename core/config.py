@@ -53,7 +53,7 @@ class Settings:
             # Going to get variables from .env
             log.logger.debug('Environment variables not found. Setting env from .env file')
             env_path = Path(".") / ".env"
-            load_dotenv(dotenv_path=env_path)
+            load_dotenv(dotenv_path=env_path, verbose=True)
 
             for attr in self.__ATTRS:
                 attr_value = os.getenv(attr)

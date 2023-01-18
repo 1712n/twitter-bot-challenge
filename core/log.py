@@ -11,7 +11,7 @@ DEFAULT_LEVEL = logging.WARNING
 
 class Logs:
     def __init__(self):
-        # Trying to load yaml config for loggin
+        # Trying to load yaml config for logging
         try:
             with open(CONFIG_FILE, 'r') as f:
                 config = yaml.safe_load(f.read())
