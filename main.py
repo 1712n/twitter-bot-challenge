@@ -1,6 +1,7 @@
 import os
 from PairToPost import PairToPost
 from MarketCapBot import MarketCapBot
+from WorkFlowRecorder import WorkFlowRecorder
 
 if __name__ == "__main__":
 
