@@ -1,8 +1,8 @@
-name: Template CryptoCapBot Python application
+name: CryptoCapBot Python application
 
 on:
   push:
-    branches: ["my-branch-name"] # TODO: rename
+    branches: ["alique"]
 
 jobs:
   build:
