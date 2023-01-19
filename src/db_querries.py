@@ -2,11 +2,13 @@ import logging
 from pymongo import collection
 from collections import OrderedDict
 
+from src.db_datatypes import *
+
 
 logger = logging.getLogger(__name__)
 
 
-def get_top_pairs(pairs_col: collection.Collection) -> OrderedDict:
+def get_top_pairs(pairs_col: collection.Collection) -> TopPairsByVolume:
     pairs_total_vol_list = pairs_col.aggregate(
         [
             {
@@ -20,7 +22,7 @@ def get_top_pairs(pairs_col: collection.Collection) -> OrderedDict:
         ],
     )
 
-    pairs_dict = OrderedDict()
+    pairs_dict = TopPairsByVolume()
     for pair in pairs_total_vol_list:
         pairs_dict[pair['_id']] = pair['volume_sum']
 
@@ -30,7 +32,7 @@ def get_top_pairs(pairs_col: collection.Collection) -> OrderedDict:
     return pairs_dict
 
 
-def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> OrderedDict:
+def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> OldestLastPostsForPairs:
     posts_list = posts_col.aggregate(
         [
             {
@@ -67,7 +69,7 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
         ],
     )
 
-    posts_dict = OrderedDict()
+    posts_dict = OldestLastPostsForPairs()
     for post in posts_list:
         posts_dict[post['_id']] = post['lastPost']
 
@@ -76,7 +78,7 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
     return posts_dict
 
 
-def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -> OrderedDict:
+def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -> PairMarketStats:
     pair_data = pairs_col.aggregate([
         {
             '$match': {
@@ -101,7 +103,7 @@ def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -
         }
     ])
 
-    pair_stats = OrderedDict()
+    pair_stats = PairMarketStats()
     for market in pair_data:
         pair_stats[market['_id']] = market['venue_vol']
 
