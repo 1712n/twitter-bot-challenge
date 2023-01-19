@@ -1,12 +1,15 @@
-from pymongo.command_cursor import CommandCursor
+import logging
 
-from core.log import log
 from core.config import settings
+from core.config import APP_NAME
 from db.session import db_session as db_session
+
+from pymongo.command_cursor import CommandCursor
 
 # Temporary for dev test
 from pprint import pprint
 
+logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 class Pair:
     def __init__(self):
@@ -34,7 +37,7 @@ class Pair:
             return err, [elem['_id'] for elem in result if len(elem['_id'])]
         except Exception as e:
             err = f"Failed to get granularities: {e}"
-            log.logger.critical(err)
+            logger.critical(err)
             return err, None
 
     # Get granularity for largest pair by volume
@@ -73,10 +76,11 @@ class Pair:
         err = None
         try:
             coll = db_session.db[settings.PAIRS_NAME]
+            logger.debug("Running aggregate ...")
             result: CommandCursor = coll.aggregate(pipeline)
         except Exception as e:
             err = f"Failed to get top granularity: {e}"
-            log.logger.critical(err)
+            logger.critical(err)
             return err, None
         # Parsing data
         try:
@@ -85,7 +89,7 @@ class Pair:
             return err, gty
         except Exception as e:
             err = f"Failed to parse data: {e}"
-            log.logger.debug(err)
+            logger.debug(err)
             return err, None
 
     # Get top pairs
@@ -132,7 +136,7 @@ class Pair:
             result = coll.aggregate(pipeline)
         except Exception as e:
             err = f"Failed to get granularities: {e}"
-            log.logger.critical(err)
+            logger.critical(err)
             return err, None
         # Parsing data
         try:
@@ -144,7 +148,7 @@ class Pair:
             return err, data
         except Exception as e:
             err = f"Failed to parse data: {e}"
-            log.logger.critical(err)
+            logger.critical(err)
             return err, None
 
 

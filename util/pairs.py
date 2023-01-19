@@ -1,12 +1,16 @@
-from core.log import log
+#from core.log import log
+import logging
+
 from core.config import settings
+from core.config import APP_NAME
 from db.pairs import Pair
 
 from pprint import pprint
 
+logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 def get_top_pairs():
-    log.logger.debug('get_top_pairs')
+    logger.debug('get_top_pairs')
     top_limit = settings.TOP_LIMIT
     # instrument.get_top()
     # 1. get all granularities
@@ -17,21 +21,21 @@ def get_top_pairs():
     pairs: Pair = Pair()
 
     # Get granularity of the largest pair
-    log.logger.debug("Getting granularity with the most volume ...")
+    logger.debug("Getting granularity with the most volume ...")
     err, gty = pairs.get_largest_pair_granularity()
     if not err:
-        log.logger.debug(f"The most granularity: {gty}")
+        logger.debug(f"The most granularity: {gty}")
     else:
-        log.logger.critical("Failed to get all granularities")
+        logger.critical("Failed to get all granularities")
         return None
 
     # Getting top 100 with known granularity
     err, top = pairs.get_top_pairs(granularity=gty, limit=top_limit)
     if not err and len(top) == top_limit:
-        log.logger.debug(f"We have: {len(top)} pairs with: {gty}")
+        logger.debug(f"We have: {len(top)} pairs with: {gty}")
         pprint(top)
         return top
     else:
-        log.logger.critical(f"Failed to get top pairs with: {gty}")
+        logger.critical(f"Failed to get top pairs with: {gty}")
         return None
 

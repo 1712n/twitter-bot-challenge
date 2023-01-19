@@ -1,15 +1,6 @@
 # Project logging
-from core.log import log
-# For mongodb
-# from pymongo import MongoClient
-# from pymongo.errors import ConnectionFailure
-# import pymongo.database
-# Temporary for printing
-# import pprint
+from core.log import logger
 
-# For mongodb
-# from db.session import get_db
-# from core.config import settings
 # Logic
 from util.pairs import get_top_pairs
 from util.posts import get_latest_posts
@@ -18,10 +9,9 @@ from util.posts import add_message
 from util.twitter import compose_message
 from util.twitter import send_message
 
-import time
 
 def main():
-    log.logger.info('The app started')
+    logger.info('The app started')
 
     # db = get_db()
     steps = 0
@@ -30,7 +20,7 @@ def main():
         top_pairs = get_top_pairs()
         if len(top_pairs) == 0:
             sleep_time = 2
-            log.logger.info(f"Query for top pairs failed. Sleeping for {sleep_time} ...")
+            logger.info(f"Query for top pairs failed. Sleeping for {sleep_time} ...")
             time.sleep(sleep_time)
             steps = 0
             continue
@@ -65,7 +55,7 @@ def main():
     # except Exception as e:
     #     log.logger.debug(f"list_databases... failed: {e}")
 
-    log.logger.info('The app finished')
+    logger.info('The app finished')
 
 
 if __name__ == '__main__':

@@ -1,4 +1,5 @@
 # For environment settings
+import logging
 import os
 import pprint
 from pathlib import Path
@@ -10,8 +11,13 @@ from urllib.parse import quote_plus
 import confuse
 
 # Logging
-from core.log import log
+#from core.log import log
 
+APP_NAME = "markedcupboat"
+CONFIG_FILE = 'logging_config.yaml'
+DEFAULT_LEVEL = logging.WARNING
+
+logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 class Settings:
     # Variables that defined by Customer/...
@@ -39,29 +45,29 @@ class Settings:
         # Check if environment variables exist
         try:
             # Setting parameters for mongodb
-            log.logger.debug(f"Trying to getenv from environment")
+            logger.debug(f"Trying to getenv from environment")
             for attr in self.__ATTRS:
                 attr_value = os.getenv(attr)
                 if attr_value:
-                    log.logger.debug(f"Found env variable: {attr}")
+                    logger.debug(f"Found env variable: {attr}")
                     setattr(self, attr, attr_value)
                 else:
-                    log.logger.debug(f"Couldn't getenv variable: {attr}")
+                    logger.debug(f"Couldn't getenv variable: {attr}")
                     raise Exception(f"Couldn't getenv environment")
         except:
             # Not less than one variable doesn't exist in environment
             # Going to get variables from .env
-            log.logger.debug('Environment variables not found. Setting env from .env file')
+            logger.debug('Environment variables not found. Setting env from .env file')
             env_path = Path(".") / ".env"
             load_dotenv(dotenv_path=env_path, verbose=True)
 
             for attr in self.__ATTRS:
                 attr_value = os.getenv(attr)
                 if attr_value:
-                    log.logger.debug(f"Read from file, variable: {attr}")
+                    logger.debug(f"Read from file, variable: {attr}")
                     setattr(self, attr, attr_value)
                 else:
-                    log.logger.critical(f"Couldn't getenv variable: {attr}")
+                    logger.critical(f"Couldn't getenv variable: {attr}")
                     raise Exception(f"Couldn't getenv environment")
         finally:
             # Building connection string for mongodb
@@ -74,7 +80,7 @@ class Settings:
             # Database name inside mongodb
             self.MONGODB_DBNAME = conf['mongodb']['dbname'].get()
             if self.MONGODB_DBNAME:
-                log.logger.debug(f"Found: MONGODB_DBNAME: {self.MONGODB_DBNAME}")
+                logger.debug(f"Found: MONGODB_DBNAME: {self.MONGODB_DBNAME}")
             # Mongodb collections names
             self.PAIRS_NAME = conf['mongodb']['pairs'].get()
             self.POSTS_NAME = conf['mongodb']['posts'].get()
@@ -84,7 +90,7 @@ class Settings:
             self.SERVERSELECTIONTIMEOUTMS: str = \
                 conf['mongodb']['serverselectiontimeoutms'].get()
         except Exception as e:
-                log.logger.critical(
+                logger.critical(
                     f"Failed configure from file: {self.CONFIG_FILE}: {e}"
                 )
 

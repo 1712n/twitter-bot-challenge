@@ -4,27 +4,22 @@ import logging.config
 # For loading logging config
 import yaml
 
+from core.config import APP_NAME
+from core.config import CONFIG_FILE
+from core.config import DEFAULT_LEVEL
 
-CONFIG_FILE = 'logging_config.yaml'
-DEFAULT_LEVEL = logging.WARNING
+try:
+    with open(CONFIG_FILE, 'r') as f:
+        config = yaml.safe_load(f.read())
+        logging.config.dictConfig(config)
+    logger = logging.getLogger(APP_NAME)
+    local_logger = logging.getLogger(f"{APP_NAME}.{__name__}")
+    local_logger.debug('Logging config loaded')
+# Failed configuration from file, setting defaults
+except Exception as e:
+    logging.basicConfig(level=DEFAULT_LEVEL)
+    logger = logging.getLogger(APP_NAME)
+    local_logger = logging.getLogger(f"{APP_NAME}.{__name__}")
+    local_logger.warning(f"Logging set from default. Failed to load logging config: {e}")
 
-
-class Logs:
-    def __init__(self):
-        # Trying to load yaml config for logging
-        try:
-            with open(CONFIG_FILE, 'r') as f:
-                config = yaml.safe_load(f.read())
-                logging.config.dictConfig(config)
-            self.logger = logging.getLogger(__name__)
-            self.logger.debug('Logging config loaded')
-        # Failed configuration from file, setting defaults
-        except Exception as e:
-            logging.basicConfig(level=DEFAULT_LEVEL)
-            self.logger = logging.getLogger(__name__)
-            self.logger.warning(f"Logging set from default. Failed to load logging config: {e}")
-
-        self.logger.debug('Logging started')
-
-
-log = Logs()
+local_logger.debug('Logging started')
