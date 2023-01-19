@@ -46,6 +46,7 @@ def main():
 
         # query for top 100 pairs by volume
         top_pairs = ohlcv_db.aggregate([
+            {"$match": {"granularity": "1h"}},
             {"$sort": {"volume": -1}},
             {"$limit": 100}
         ])
@@ -57,14 +58,15 @@ def main():
         pair_to_post = None
         max_volume = 0
         for pair in not_recently_posted:
-            volume = ohlcv_db.find_one({"pair_symbol": pair["pair"].split("-")[0], "pair_base": pair["pair"].split("-")[1]})["volume"]
+            volume = ohlcv_db.find_one({"pair_symbol": pair["pair"].split("-")[0], "pair_base": pair["pair"].split("-")[1], "granularity":"1h"})["volume"]
             if volume > max_volume:
                 pair_to_post = pair["pair"]
                 max_volume = volume
 
         # compose message to post
-        volume_data = ohlcv_db.find({"pair_symbol": pair_to_post.split("-")[0], "pair_base": pair_to_post.split("-")[1]})
+        volume_data = ohlcv_db.find({"pair_symbol": pair_to_post.split("-")[0], "pair_base": pair_to_post.split("-")[1], "granularity":"1h"})
         message_to_post = compose_message(pair_to_post, volume_data)
+        print(message_to_post)
 
         post_tweet(pair_to_post, message_to_post)
     except Exception as e:
