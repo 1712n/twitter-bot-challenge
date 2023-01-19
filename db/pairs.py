@@ -12,7 +12,6 @@ class Pair:
     def __init__(self):
         self.__collection_name = settings.PAIRS_NAME
 
-
     def get_granularities(self) -> tuple[str | None, list | None]:
         """
         Get granularities from a mongodb collection
@@ -35,9 +34,8 @@ class Pair:
             return err, [elem['_id'] for elem in result if len(elem['_id'])]
         except Exception as e:
             err = f"Failed to get granularities: {e}"
-            log.logger.debug(err)
+            log.logger.critical(err)
             return err, None
-
 
     def get_largest_pair_granularity(self) -> tuple[str | None, str | None]:
         """
@@ -45,22 +43,31 @@ class Pair:
         :return:
         """
         # Preparing mongodb pipeline for db.collection.aggregate command
-        stage_group = {
+        stage_project = {  # Make a pair field by $project $concat
+            "$project": {
+                "pair": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
+                "volume": "$volume",
+                "granularity": "$granularity",
+            }
+        }
+        stage_group = {  # Group data by $pair, $granularity, summary $volume
             "$group": {
                 "_id": {
-                    "market_id": "$market_id",
+                    "pair": "$pair",
                     "granularity": "$granularity",
                 },
                 "volume": {"$sum": {"$toDouble": "$volume"}},
             }
         }
-        stage_sort = {"$sort": {"volume": -1}}
-        stage_limit = {"$limit": 1}
+        stage_sort = {"$sort": {"volume": -1}}  # Sorty by $volume desc
+        stage_limit = {"$limit": 1}  # Limit output to 1 row
         pipeline = [
+            stage_project,
             stage_group,
             stage_sort,
             stage_limit,
         ]
+        pprint(pipeline)
         # Executing mongodb db.collection.aggregate command
         err = None
         try:
@@ -68,7 +75,7 @@ class Pair:
             result: CommandCursor = coll.aggregate(pipeline)
         except Exception as e:
             err = f"Failed to get top granularity: {e}"
-            log.logger.debug(err)
+            log.logger.critical(err)
             return err, None
         # Parsing data
         try:
@@ -79,7 +86,6 @@ class Pair:
             err = f"Failed to parse data: {e}"
             log.logger.debug(err)
             return err, None
-
 
     def get_top_pairs(
             self,

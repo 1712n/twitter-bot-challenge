@@ -29,46 +29,6 @@ Documents stored with the same `metaField` stored together.
 
 # How to get data
 
-Get all instruments/pairs:
-
-```json
-db.getCollection("ohlcv_db").aggregate(
-  [
-    { "$group":
-    	{ "_id": "$market_id" } },
-  ]
-);
-
-```
-
-Get all granularity for instrument:
-
-```json
-db.getCollection("ohlcv_db").aggregate(
-  [
-    { "$match": { "market_id": "okx-ltc-usdt-f" } },
-    { "$group":
-    	{ "_id": "$granularity" } },
-  ]
-);
-
-```
-
-Get summary volumes for each instrument:
-
-```json
-db.getCollection("ohlcv_db").aggregate(
-  [
-    { $group:
-    	{ 
-    	  "_id": "$market_id" ,
-    	  "total": { $sum: { $toDouble: "$volume"} }
-    	},
-    }
-  ]
-);
-```
-
 ## Our interest
 
 Get all granularities:
@@ -82,20 +42,19 @@ db.getCollection("ohlcv_db").aggregate(
 );
 ```
 
-Get top 100 instruments by accumulated volume group by: marketVenue, market_id,
-granularity:
+Get granularity for largest by volume pair:
 
 ```json
 db.getCollection("ohlcv_db").aggregate(
-  [
-    { "$group":
-    	{ 
-    	  "_id": {"marketVenue": "$marketVenue", "market_id": "$market_id", "granularity": "$granularity" },
-    	  "volume": { $sum: { $toDouble: "$volume"} },
-    	},
-    },
-    { $sort: { "volume": -1 } },
-    { $limit: 100 },
-  ]
+[{'$project': {'granularity': '$granularity',
+               'pair': {'$concat': ['$pair_symbol', '-', '$pair_base']},
+               'volume': '$volume'}},
+ {'$group': {'_id': {'granularity': '$granularity', 'pair': '$pair'},
+             'volume': {'$sum': {'$toDouble': '$volume'}}}},
+ {'$sort': {'volume': -1}},
+ {'$limit': 1}]
 );
 ```
+
+
+
