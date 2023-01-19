@@ -69,8 +69,8 @@ class MarketCapBot():
             return None
 
         if 'tweet_id' in last_post:
-            logger.debug(
-                f"Found previous post tweet_id in last_post document with id:{last_post['tweet_id']}, going on with it")
+            logger.info(
+                f"Found previous post tweet_id in last_post document, going on with it")
             return last_post['tweet_id']
 
         post_time = last_post['time']
@@ -90,8 +90,8 @@ class MarketCapBot():
 
         for tweet in tweets.data:
             if tweet.text == post_text:
-                logger.debug(
-                    f"Found previous tweeter post for pair with id:{tweet.id}!")
+                logger.info(
+                    f"Found previous tweeter post for pair.")
                 return tweet.id
         logger.info("Couldn't find previous message, giving up.")
         return None
@@ -122,6 +122,8 @@ class MarketCapBot():
         prev_post_id = None
         if last_post_from_db != None:
             prev_post_id = self.find_twitter_post_id(last_post_from_db)
+            logger.info(
+                f"Found previous post tweet_id is:{prev_post_id}")
         '''separate not None checks needed in this case since not always 
         existence of last post in mongo database guarantees that we can 
         find corresponding tweet'''

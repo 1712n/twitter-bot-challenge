@@ -23,7 +23,7 @@ jobs:
 
       - name: Run pytest
         run: |
-          pytest
+          pytest -vv
 
   build:
     runs-on: ubuntu-latest
