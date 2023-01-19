@@ -12,7 +12,7 @@ def connect_twitter():
     """
 
     consumer_key = os.environ["TW_CONSUMER_KEY"]
-    consumer_secret = os.environ["TW_CONSUMER_SECRET"]
+    consumer_secret = os.environ["TW_CONSUMER_KEY_SECRET"]
     access_token = os.environ["TW_ACCESS_TOKEN"]
     access_token_secret = os.environ["TW_ACCESS_TOKEN_SECRET"]
 
