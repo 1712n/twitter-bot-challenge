@@ -10,9 +10,16 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 def select_pair(top_pairs):
     posts_tool = PostsToolBox()
+
     err, oldest_post = posts_tool.get_oldest_pairs_post(top_pairs)
-    logger.debug(f"We have oldest_post: {oldest_post}")
-    ...
+    if not err:
+        logger.debug(f"We have oldest post: {oldest_post}")
+        pair_to_post = oldest_post['pair']
+        logger.debug(f"pair_to_post: {pair_to_post}")
+        return pair_to_post
+    else:
+        logger.critical("Failed to get oldest post")
+        return None
 
 
 def add_message():
