@@ -62,13 +62,22 @@ class MarketCapBot():
 
         return pair, vol, last_post
 
-    def find_twitter_post_id(self, last_post: dict) -> int:
+    def last_post_validate(self, last_post) -> bool:
+        if type(last_post) != dict:
+            return False
         if 'time' not in last_post or 'tweet_text' not in last_post:
+            return False
+        if type(last_post['time']) != datetime or type(last_post['tweet_text']) != str:
+            return False
+        return True
+
+    def find_twitter_post_id(self, last_post) -> int:
+        if not self.last_post_validate(last_post):
             logger.info(
                 "Incorrect last post format (can't find required fields), giving up on search for the message id!")
             return None
 
-        if 'tweet_id' in last_post:
+        if 'tweet_id' in last_post and type(last_post['tweet_id']) == int:
             logger.info(
                 f"Found previous post tweet_id in last_post document, going on with it")
             return last_post['tweet_id']
@@ -123,32 +132,18 @@ class MarketCapBot():
         if last_post_from_db != None:
             prev_post_id = self.find_twitter_post_id(last_post_from_db)
             logger.info(
-                f"Found previous post tweet_id is:{prev_post_id}")
-        '''separate not None checks needed in this case since not always 
-        existence of last post in mongo database guarantees that we can 
-        find corresponding tweet'''
-        try:
-            if prev_post_id != None:
-                response = self.tw_client.create_tweet(
-                    text=self.new_post_message, in_reply_to_tweet_id=prev_post_id)
-                logger.info("Posted tweet in reply")
-
-                self.new_post_response = response
-                return response
-        except tweepy.TweepyException:
-            logger.error(
-                "Error while posting new tweet as response, trying to post it as standalone tweet!")
+                f"Previous post tweet_id is:{prev_post_id}")
 
         try:
             response = self.tw_client.create_tweet(
-                text=self.new_post_message)
-            logger.info("Posted standalone tweet")
+                text=self.new_post_message, in_reply_to_tweet_id=prev_post_id)
+            logger.info("Posted tweet")
 
             self.new_post_response = response
+            return response
         except tweepy.TweepyException:
             logger.error("Error while posting new tweet!")
             raise
-        return response
 
     def write_to_posts_db(self):
         doc_to_ins = dict({
@@ -166,7 +161,7 @@ class MarketCapBot():
             logger.error("Error while writing new post to mongoDB!")
             raise
         logger.info("New document inserted into posts_db!")
-        logger.debug(f"Database response:\n{res.inserted_id}")
+        logger.debug(f"It's id:{res.inserted_id}")
         return res
 
 
