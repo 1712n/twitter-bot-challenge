@@ -17,11 +17,11 @@ def main():
 
     # db = get_db()
     steps = 0
+    sleep_time = 2
     while steps < 5:
         # query ohlcv_db for the top 100 pairs by compound volume
         top_pairs = get_top_pairs()
         if len(top_pairs) == 0:
-            sleep_time = 2
             logger.info(f"Query for top pairs failed. Sleeping for {sleep_time} ...")
             time.sleep(sleep_time)
             steps = 0
@@ -36,7 +36,11 @@ def main():
         # sort results by the oldest timestamp to find the pairs that
         # haven't been posted for a while, then corresponding volume to find
         # the biggest markets among them and select the pair_to_post
-        select_pair(top_pairs)
+        pair_to_post = select_pair(top_pairs)
+        if not pair_to_post:
+            logger.info(f"Query and selection for pair_to_post failed")
+            steps = 0
+            continue
         steps += 1
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
