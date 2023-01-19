@@ -8,16 +8,18 @@ if __name__ == "__main__":
     recorder = WorkFlowRecorder()
     recorder.get_logged("Start main workflow")
 
-    pair_to_post = PairToPost(user=os.environ["MONGODB_USER"],
-                                password=os.environ["MONGODB_PASSWORD"],
-                                address=os.environ["MONGO_DB_ADDRESS"],
-                                recorder=recorder)
+    pair_to_post = PairToPost(
+        user=os.environ["MONGODB_USER"],
+        password=os.environ["MONGODB_PASSWORD"],
+        address=os.environ["MONGO_DB_ADDRESS"],
+        recorder=recorder)
 
-    bot = MarketCapBot(consumer_key=os.environ["TW_CONSUMER_KEY"],
-                        consumer_secret=os.environ["TW_CONSUMER_KEY_SECRET"],
-                        access_token=os.environ["TW_ACCESS_TOKEN"],
-                        access_token_secret=os.environ["TW_ACCESS_TOKEN_SECRET"],
-                        recorder=recorder)
+    bot = MarketCapBot(
+        consumer_key=os.environ["TW_CONSUMER_KEY"],
+        consumer_secret=os.environ["TW_CONSUMER_KEY_SECRET"],
+        access_token=os.environ["TW_ACCESS_TOKEN"],
+        access_token_secret=os.environ["TW_ACCESS_TOKEN_SECRET"],
+        recorder=recorder)
 
     pair_to_post.get_pair_to_post()
 
