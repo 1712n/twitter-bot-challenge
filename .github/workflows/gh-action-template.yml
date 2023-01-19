@@ -2,8 +2,7 @@ name: Template CryptoCapBot Python application
 
 on:
   push:
-    #branches: ["boris_ivanov"]
-    branches: ["branch-name"]
+    branches: ["boris_ivanov"]
 
 jobs:
   build:
