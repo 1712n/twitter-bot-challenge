@@ -255,7 +255,7 @@ def post_tweet(message_to_post, pair, posts_db):
         tweet_id = recent_tweets.meta['newest_id']
     else:
         logger.info('Posting tweet to the corresponding thread.')
-        tweet_id = post[0]['tweet_id']
+        tweet_id = int(post[0]['tweet_id'])
         tweepy_client.create_tweet(
             text=message_to_post,
             in_reply_to_tweet_id=tweet_id
