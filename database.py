@@ -1,15 +1,17 @@
 import os
 import time
 import logging
+import datetime
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError, ConnectionFailure
 
 
 def handle_mongodb_errors(func):
-    """A decorator to handle AutoReconnect exceptions.
+    """A decorator to handle MongoDB exceptions.
 
     Tries to reconnect 5 times with increasing wait times, then fails. Number of
     reconnects can be changed via MONGODB_RECONNECT_ATTEMPTS environment variable.
+    Logs other errors.
     """
 
     def _handle_mongodb_errors(*args, **kwargs):
@@ -25,17 +27,17 @@ def handle_mongodb_errors(func):
 
             except ConnectionFailure as error:
                 logging.error("Connecting to the database failed. Cause: %s", str(error))
-                return None
+                raise
 
             except ConfigurationError as error:
                 logging.error("Database is configured incorrectly: %s", str(error))
-                return None
+                raise
 
             except Exception as error:
                 logging.error("A database operation failed. Cause: %s", str(error))
-                return None
+                raise
 
-        return None
+        return func(*args, **kwargs)
 
     return _handle_mongodb_errors
 
@@ -45,7 +47,7 @@ def connect_db():
     """Connects to MongoDB using credentials from environment vars.
 
     Returns:
-        MongoClient: database client
+        pymongo.MongoClient: database client.
     """
 
     user = os.environ["MONGODB_USER"]
@@ -64,7 +66,7 @@ def choose_pair(client, granularity="1h"):
     """Chooses a trading pair with big market volume that hasn't been posted for a while.
 
     Arguments:
-        client (MongoClient): A database client.
+        client (pymongo.MongoClient): A database client.
         granularity (str): Granularity of aggregated data. Equals '1h' by default.
 
     Returns:
@@ -221,7 +223,7 @@ def get_markets(client, pair, granularity="1h"):
     """Returns all markets with volumes for a given pair.
 
     Arguments:
-        client (MongoClient): A database client.
+        client (pymongo.MongoClient): A database client.
         pair (str): A string representing a trading pair.
         granularity (str): Granularity of aggregated data. Equals '1h' by default.
     Returns:
@@ -268,3 +270,64 @@ def get_markets(client, pair, granularity="1h"):
     logging.debug('Markets: %s', str(markets))
 
     return markets
+
+
+@handle_mongodb_errors
+def get_pair_thread(client, pair):
+    """Finds the first tweet about given pair.
+
+    Arguments:
+        client (pymongo.MongoClient): a database client.
+        pair (str): a string representation of a trading pair.
+    Returns:
+        int: first tweet's id if it exists, None otherwise.
+    """
+
+    result = client['metrics']['posts_db'].aggregate([
+        {
+            '$match': {
+                'pair': pair, 
+                'tweet_id': {
+                    '$exists': True
+                }
+            }
+        }, {
+            '$sort': {
+                'time': -1
+            }
+        }, {
+            '$group': {
+                '_id': '$pair', 
+                'tweet_id': {
+                    '$first': '$tweet_id'
+                }
+            }
+        }
+    ])
+    thread = list(result)
+
+    if len(thread) == 0:
+        logging.info("Pair's thread not found, a new one will be created")
+        return None
+    logging.info("Found pair's thread")
+    return thread[0]["tweet_id"]
+
+
+@handle_mongodb_errors
+def save_tweet(client, text, tweet_id, pair):
+    """Saves a given tweet to posts_db.
+
+    Arguments:
+        client (pymongo.MongoClient): a database client.
+        text (str): tweet's text.
+        tweet_id (int): tweet's id.
+        pair (str): a string representation of a trading pair.
+    """
+
+    client["metrics"]["posts_db"].insert_one({
+        "time": datetime.utcnow(),
+        "pair": pair,
+        "tweet_id": str(tweet_id),
+        "tweet_text": text
+    })
+    logging.info("Successfully saved tweet to posts_db")

@@ -21,7 +21,8 @@ class TestAutoReconnectHandler(unittest.TestCase):
         def mongodb_call():
             raise pymongo.errors.AutoReconnect
 
-        self.assertEqual(mongodb_call(), None)
+        with self.assertRaises(pymongo.errors.AutoReconnect):
+            mongodb_call()
 
 
 if __name__ == '__main__':
