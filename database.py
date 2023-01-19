@@ -310,7 +310,7 @@ def get_pair_thread(client, pair):
         logging.info("Pair's thread not found, a new one will be created")
         return None
     logging.info("Found pair's thread: %s", thread[0]["tweet_id"])
-    return thread[0]["tweet_id"]
+    return int(thread[0]["tweet_id"])
 
 
 @handle_mongodb_errors
