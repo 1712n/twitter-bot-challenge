@@ -38,7 +38,7 @@ class MarketCapBot():
         top_5_markets =""
         other_markets_percent = 0
 
-        if len(self.pair_document["markets"]) >=5:
+        if len(self.pair_document["markets"]) >= 5:
             for i in range(5):
                 top_5_markets += f"{self.pair_document['markets'][i]['marketVenue'].capitalize()} {self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
             for i in range(5, len(self.pair_document["markets"])):
@@ -114,6 +114,6 @@ class MarketCapBot():
                         "pair": f"{self.pair_document['pair_symbol'].upper()}-{self.pair_document['pair_base'].upper()}",
                         "pair_to_post_id": self.pair_to_post_id}
 
-        self.recorder.get_logged(new_tweet_data.__str__().replace(",", "\n"))
+        self.recorder.get_logged("new tweet data:\n" + new_tweet_data.__str__().replace(", '", "\n'"))
         self.recorder.get_logged("method create_tweet has finished")
         return new_tweet_data

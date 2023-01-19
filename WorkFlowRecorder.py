@@ -20,11 +20,11 @@ class WorkFlowRecorder():
         if error_flag:
             delimiter = " -> "
             indent = " "*(len(datetime.utcnow().isoformat())) + delimiter
-            print(f"{call_timestamp.isoformat()} ! ERROR")
+            print(f"{call_timestamp.isoformat()} ! ERROR\n")
 
         if len(splited_message) > 1:
             print(f"{call_timestamp.isoformat()}{delimiter}{splited_message[0]}")
             for i in range(1, len(splited_message)):
                 print(f"{indent}{splited_message[i]}")
         else:
-            print(f"{call_timestamp.isoformat()}{delimiter}{splited_message[0]}")
+            print(f"{call_timestamp.isoformat()}{delimiter}{splited_message[0]}\n")

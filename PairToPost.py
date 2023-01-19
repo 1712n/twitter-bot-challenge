@@ -249,11 +249,11 @@ class PairToPost():
         self.recorder.get_logged("Selected pair data:\n"
                                 + f"pair_symbol: {self.pair_document.get('pair_symbol')}\n"
                                 + f"pair_base: {self.pair_document.get('pair_base')}\n"
-                                + f"\tlatest_post['pair']: {self.pair_document.get('pair')}\n"
-                                + f"\tlatest_post['timestamp']: {self.pair_document.get('timestamp')}\n"
-                                + f"\tlatest_post['tweet_id']: {self.pair_document.get('tweet_id')}\n"
+                                + f"\tlatest_post['pair']: {self.pair_document.get('latest_post').get('pair')}\n"
+                                + f"\tlatest_post['timestamp']: {self.pair_document.get('latest_post').get('timestamp')}\n"
+                                + f"\tlatest_post['tweet_id']: {self.pair_document.get('latest_post').get('tweet_id')}\n"
                                 + f"markets:\n"
-                                + f"{self.pair_document.get('markets').__str__().replace(',', '\n').replace('{', '\t{')[1:-1]}"
+                                + self.pair_document.get('markets').__str__().replace(', {', '\n{').replace('{', '\t{')[1:-1]
                                 )
 
         self.recorder.get_logged("method get_pair_to_post has finished")
