@@ -1,6 +1,5 @@
 import logging
 from pymongo import collection
-from collections import OrderedDict
 
 from src.db_datatypes import *
 
