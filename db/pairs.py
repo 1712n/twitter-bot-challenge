@@ -6,8 +6,6 @@ from db.session import db_session as db_session
 
 from pymongo.command_cursor import CommandCursor
 
-# Temporary for dev test
-from pprint import pprint
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 

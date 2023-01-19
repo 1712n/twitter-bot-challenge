@@ -2,8 +2,6 @@
 import logging
 #
 from pymongo.command_cursor import CommandCursor
-# Temporary for dev test
-from pprint import pprint
 from pprint import pformat
 
 from core.config import settings
