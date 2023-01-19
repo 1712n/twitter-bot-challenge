@@ -4,38 +4,40 @@ import logging
 from pymongo.command_cursor import CommandCursor
 # Temporary for dev test
 from pprint import pprint
-
+from pprint import pformat
 
 from core.config import settings
+from core.config import APP_NAME
 from db.session import db_session as db_session
 
-logger = logging.getLogger()
+logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
 class PostsToolBox:
     def __init__(self):
-        self.__collection_name = settings.PAIRS_NAME
+        self.collection_name = settings.POSTS_NAME
 
-    def get_oldest_pairs_post(self, pairs: list) -> tuple[str | None, list | None]:
+    def get_oldest_pairs_post(self, pairs: list) -> tuple[str | None, dict | None]:
         """
         Get granularities from a mongodb collection
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+        !! May be it wrong
+        !! I'll get back to check it later
+        !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         :return:
         """
         # Preparing mongodb pipeline for db.collection.aggregate command
-        # stage_match = {"$match": {"pair": {"$in": ["LINK-USDT", "LTC-USDT"]}}}
-        stage_match = {"$match": {"pair": {"$in": pairs}}}
-        stage_sort_1 = {"$sort": {"pair": 1, "time": -1}}
-        stage_group = {
+        stage_match: dict = {"$match": {"pair": {"$in": pairs}}}
+        stage_sort_1: dict = {"$sort": {"pair": 1, "time": -1}}
+        stage_group: dict = {
             "$group": {
-                "_id": {
-                    "pair": "$pair",
-                },
+                "_id": "$pair",
                 "latestTime": {"$first": "$time"},
             },
-        },
-        stage_sort_2 = {"$sort": {"time": 1}}
-        stage_limit = {"$limit": 1}
-        pipeline = [
+        }
+        stage_sort_2: dict = {"$sort": {"time": 1}}
+        stage_limit: dict = {"$limit": 1}
+        pipeline: list = [
             stage_match,
             stage_sort_1,
             stage_group,
@@ -43,12 +45,19 @@ class PostsToolBox:
             stage_limit,
         ]
         # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         err = None
         try:
-            coll = db_session.db[settings.PAIRS_NAME]
-            result = coll.aggregate(pipeline)
-            return err, [elem['_id'] for elem in result if len(elem['_id'])]
+            coll = db_session.db[self.collection_name]
+            result: CommandCursor = coll.aggregate(
+                pipeline=pipeline,
+                maxTimeMS=10000
+            )
+            elem = result.next()
+            logger.debug(f"aggregate result: {elem}")
+            return err, {'pair': elem['_id'], 'time': elem['latestTime']}
         except Exception as e:
-            err = f"Failed to get granularities: {e}"
-            log.logger.debug(err)
+            err = f"Failed to get oldest post: {e}"
+            logger.debug(err)
             return err, None
+

@@ -14,7 +14,7 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 class PairsToolBox:
     def __init__(self):
-        self.__collection_name = settings.PAIRS_NAME
+        self.collection_name = settings.PAIRS_NAME
 
     def get_granularities(self) -> tuple[str | None, list | None]:
         """
@@ -33,7 +33,7 @@ class PairsToolBox:
         # Executing mongodb db.collection.aggregate command
         err = None
         try:
-            coll = db_session.db[settings.PAIRS_NAME]
+            coll = db_session.db[self.collection_name]
             result = coll.aggregate(pipeline)
             return err, [elem['_id'] for elem in result if len(elem['_id'])]
         except Exception as e:
@@ -76,7 +76,7 @@ class PairsToolBox:
         # Executing mongodb db.collection.aggregate command
         err = None
         try:
-            coll = db_session.db[settings.PAIRS_NAME]
+            coll = db_session.db[self.collection_name]
             logger.debug("Running aggregate ...")
             result: CommandCursor = coll.aggregate(pipeline)
         except Exception as e:
@@ -127,17 +127,19 @@ class PairsToolBox:
         stage_match = {"$match": {"granularity": granularity}}
         stage_sort = {"$sort": {"volume": sort_order}}
         stage_limit = {"$limit": limit}
+        stage_project_2 = {"$project": {"pair": "$pair"}}
         pipeline = [
             stage_project,
             stage_match,
             stage_group,
             stage_sort,
             stage_limit,
+            stage_project_2,
         ]
         # Executing mongodb db.collection.aggregate command
         err = None
         try:
-            coll = db_session.db[settings.PAIRS_NAME]
+            coll = db_session.db[self.collection_name]
             result = coll.aggregate(pipeline)
         except Exception as e:
             err = f"Failed to get granularities: {e}"
@@ -147,12 +149,13 @@ class PairsToolBox:
         try:
             data = []
             for elem in result:
-                market_pair = elem['_id'].copy()
-                market_pair['volume'] = elem['volume']
+                # market_pair = elem['_id'].copy()['pair']
+                market_pair = elem['_id']['pair']
                 data.append(market_pair)
             if not len(data) and (len(data) > limit):
                 err = f"No data or too more data in the results"
                 logger.critical(err)
+            logger.debug(f"Going to return data: {data}")
             return err, data
         except Exception as e:
             err = f"Failed to parse data: {e}"

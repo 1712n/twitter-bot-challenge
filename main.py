@@ -27,6 +27,7 @@ def main():
             steps = 0
             continue
         steps += 1
+        logger.debug(f"top_pairs: {top_pairs}")
 
         # query posts_db for the latest documents corresponding to those 100 pairs
         # I don't need it??????
@@ -35,7 +36,7 @@ def main():
         # sort results by the oldest timestamp to find the pairs that
         # haven't been posted for a while, then corresponding volume to find
         # the biggest markets among them and select the pair_to_post
-        select_pair()
+        select_pair(top_pairs)
         steps += 1
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
