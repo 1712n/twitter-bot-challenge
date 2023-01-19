@@ -23,6 +23,7 @@ jobs:
 
       - name: Execute python script
         env:
+          DEBUG: ${{ true }}
           TW_ACCESS_TOKEN: ${{ secrets.TW_ACCESS_TOKEN }}
           TW_ACCESS_TOKEN_SECRET: ${{ secrets.TW_ACCESS_TOKEN_SECRET }}
           TW_CONSUMER_KEY: ${{ secrets.TW_CONSUMER_KEY }}
