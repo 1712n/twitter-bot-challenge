@@ -37,6 +37,7 @@ class Pair:
             log.logger.critical(err)
             return err, None
 
+    # Get granularity for largest pair by volume
     def get_largest_pair_granularity(self) -> tuple[str | None, str | None]:
         """
         Get granularity for largest pair by volume
@@ -67,7 +68,7 @@ class Pair:
             stage_sort,
             stage_limit,
         ]
-        pprint(pipeline)
+        # pprint(pipeline)
         # Executing mongodb db.collection.aggregate command
         err = None
         try:
@@ -87,6 +88,7 @@ class Pair:
             log.logger.debug(err)
             return err, None
 
+    # Get top pairs
     def get_top_pairs(
             self,
             granularity: str,
@@ -98,11 +100,17 @@ class Pair:
         :return:
         """
         # Preparing mongodb pipeline for db.collection.aggregate command
+        stage_project = {  # Make a pair field by $project $concat
+            "$project": {
+                "pair": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
+                "volume": "$volume",
+                "granularity": "$granularity",
+            }
+        }
         stage_group = {
             "$group": {
                 "_id": {
-                    "marketVenue": "$marketVenue",
-                    "market_id": "$market_id",
+                    "pair": "$pair",
                 },
                 "volume": {"$sum": {"$toDouble": "$volume"}},
             }
@@ -111,6 +119,7 @@ class Pair:
         stage_sort = {"$sort": {"volume": sort_order}}
         stage_limit = {"$limit": limit}
         pipeline = [
+            stage_project,
             stage_match,
             stage_group,
             stage_sort,
@@ -123,7 +132,7 @@ class Pair:
             result = coll.aggregate(pipeline)
         except Exception as e:
             err = f"Failed to get granularities: {e}"
-            log.logger.debug(err)
+            log.logger.critical(err)
             return err, None
         # Parsing data
         try:
@@ -135,7 +144,7 @@ class Pair:
             return err, data
         except Exception as e:
             err = f"Failed to parse data: {e}"
-            log.logger.debug(err)
+            log.logger.critical(err)
             return err, None
 
 
