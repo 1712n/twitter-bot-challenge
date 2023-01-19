@@ -2,7 +2,7 @@ import logging
 
 from core.config import settings
 from core.config import APP_NAME
-from db.pairs import Pair
+from db.pairs import PairsToolBox
 
 from pprint import pprint
 
@@ -17,7 +17,7 @@ def get_top_pairs():
     #   count all
     # 2. get top 100 for eache granularity
     # 3. choose biggest volumes
-    pairs: Pair = Pair()
+    pairs: PairsToolBox = PairsToolBox()
 
     # Get granularity of the largest pair
     logger.debug("Getting granularity with the most volume ...")

@@ -12,7 +12,7 @@ from pprint import pprint
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
-class Pair:
+class PairsToolBox:
     def __init__(self):
         self.__collection_name = settings.PAIRS_NAME
 
