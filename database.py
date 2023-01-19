@@ -288,7 +288,8 @@ def get_pair_thread(client, pair):
             '$match': {
                 'pair': pair, 
                 'tweet_id': {
-                    '$exists': True
+                    '$exists': True,
+                    '$ne': None
                 }
             }
         }, {

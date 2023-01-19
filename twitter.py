@@ -54,7 +54,7 @@ def tweet(client, text, in_reply_to=None):
     try:
         tweet = client.create_tweet(text=text, in_reply_to_tweet_id=in_reply_to)
         logging.info("Successfully tweeted the message!")
-        return tweet.data["id"]
+        return int(tweet.data["id"])
 
     except TooManyRequests as error:
         logging.error("Twitter error: too many requests: %s", str(error))
