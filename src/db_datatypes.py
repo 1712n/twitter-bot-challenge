@@ -35,13 +35,13 @@ class PairMarketStats(OrderedDict):
         percent_sum = 0
         for market in self.keys():
             market_vol_percens = self[market] / total_vol * 100
-            percent_sum += market_vol_percens
+            percent_sum += int(market_vol_percens * 100)
 
             if market_vol_percens >= 0.01:
                 # forming a message
                 message += f"{market.title()} {market_vol_percens:.2f}%\n"
 
-        remains = 10000 - int(percent_sum * 100)
+        remains = 10000 - percent_sum
         remains /= 100
         if remains >= 0.01:
             message += f"Others {remains:.2f}%"
