@@ -1,4 +1,4 @@
-name: CryptoCapBot Python application
+name: alique CryptoCapBot
 
 on:
   push:
