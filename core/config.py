@@ -1,7 +1,7 @@
-# For environment settings
+# Logging
 import logging
+# For environment settings
 import os
-import pprint
 from pathlib import Path
 from dotenv import load_dotenv
 # For mongodb connection string
@@ -10,14 +10,15 @@ from urllib.parse import quote_plus
 # For settings from config.yaml
 import confuse
 
-# Logging
-#from core.log import log
-
+# Application name
 APP_NAME = "markedcupboat"
+# Logging configuration file
 CONFIG_FILE = 'logging_config.yaml'
+# Logging level
 DEFAULT_LEVEL = logging.WARNING
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
+
 
 class Settings:
     # Variables that defined by Customer/...
