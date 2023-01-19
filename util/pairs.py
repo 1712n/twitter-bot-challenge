@@ -1,4 +1,3 @@
-#from core.log import log
 import logging
 
 from core.config import settings
@@ -29,9 +28,9 @@ def get_top_pairs():
         logger.critical("Failed to get all granularities")
         return None
 
-    # Getting top 100 with known granularity
+    # Getting top pairs with known granularity
     err, top = pairs.get_top_pairs(granularity=gty, limit=top_limit)
-    if not err and len(top) == top_limit:
+    if not err:
         logger.debug(f"We have: {len(top)} pairs with: {gty}")
         pprint(top)
         return top

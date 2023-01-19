@@ -11,6 +11,7 @@ from pprint import pprint
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
+
 class Pair:
     def __init__(self):
         self.__collection_name = settings.PAIRS_NAME
@@ -106,7 +107,11 @@ class Pair:
         # Preparing mongodb pipeline for db.collection.aggregate command
         stage_project = {  # Make a pair field by $project $concat
             "$project": {
-                "pair": {"$concat": ["$pair_symbol", "-", "$pair_base"]},
+                "pair": {
+                    "$toUpper": {
+                        "$concat": ["$pair_symbol", "-", "$pair_base"]
+                    }
+                },
                 "volume": "$volume",
                 "granularity": "$granularity",
             }
@@ -145,6 +150,9 @@ class Pair:
                 market_pair = elem['_id'].copy()
                 market_pair['volume'] = elem['volume']
                 data.append(market_pair)
+            if not len(data) and (len(data) > limit):
+                err = f"No data or too more data in the results"
+                logger.critical(err)
             return err, data
         except Exception as e:
             err = f"Failed to parse data: {e}"

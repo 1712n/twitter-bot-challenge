@@ -1,9 +1,11 @@
 # Project logging
 from core.log import logger
+# For sleep
+import time
 
 # Logic
 from util.pairs import get_top_pairs
-from util.posts import get_latest_posts
+#from util.posts import get_latest_posts
 from util.posts import select_pair
 from util.posts import add_message
 from util.twitter import compose_message
@@ -15,7 +17,7 @@ def main():
 
     # db = get_db()
     steps = 0
-    while steps < 6:
+    while steps < 5:
         # query ohlcv_db for the top 100 pairs by compound volume
         top_pairs = get_top_pairs()
         if len(top_pairs) == 0:
@@ -27,8 +29,9 @@ def main():
         steps += 1
 
         # query posts_db for the latest documents corresponding to those 100 pairs
-        get_latest_posts(top_pairs)
-        steps += 1
+        # I don't need it??????
+        # get_latest_posts(top_pairs)
+        # steps += 1
         # sort results by the oldest timestamp to find the pairs that
         # haven't been posted for a while, then corresponding volume to find
         # the biggest markets among them and select the pair_to_post
