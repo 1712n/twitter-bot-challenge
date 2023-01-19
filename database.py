@@ -1,7 +1,7 @@
 import os
 import time
 import logging
-import datetime
+from datetime import datetime
 from pymongo import MongoClient
 from pymongo.errors import AutoReconnect, ConfigurationError, ConnectionFailure
 
