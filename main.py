@@ -41,7 +41,7 @@ def main():
     message = compose_message(pair, compound_volume, markets)
     logging.info("Posting and saving this message: \n %s", message)
     thread_id = get_pair_thread(db_client, pair)
-    tweet_id = tweet(twitter_api, message, in_reply_to=thread_id)
+    tweet_id = tweet(twitter_api, message, in_reply_to=int(thread_id))
     save_tweet(db_client, message, tweet_id, pair)
 
     db_client.close()
