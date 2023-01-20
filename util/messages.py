@@ -10,6 +10,8 @@ from models.message import Message
 from db.pairs import PairsToolBox
 from db.posts import PostsToolBox
 from twitter.tweets import TwitterToolBox
+from models.post import Post
+
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
@@ -47,7 +49,7 @@ def send_message(pair: str, text: str) -> str | None:
     if err:
         logger.critical(f"Failed to check pair_to_post in posts")
         return None
-    logger.info(f"is pair: {pair} in posts: {post_present}")
+    logger.debug(f"is pair: {pair} in posts: {post_present}")
 
     # Find tweet_id in posts
     err, old_tweet_id = posts_tool.get_tweet_id_by_pair(pair=pair)
@@ -64,9 +66,9 @@ def send_message(pair: str, text: str) -> str | None:
     # Send message as s tweet
     twitter_tool = TwitterToolBox()
     if old_tweet_id:
-        logger.info(f"Going to send message as reply tweet in old thread")
+        logger.debug(f"Going to send message as reply tweet in old thread")
     else:
-        logger.info(f"Going to send message as new tweet as a new thread")
+        logger.debug(f"Going to send message as new tweet as a new thread")
     # Going to create tweet
     err, new_tweet_id = twitter_tool.create_tweet(
         text,
@@ -74,7 +76,7 @@ def send_message(pair: str, text: str) -> str | None:
     )
     # If we were trying to create reply tweet. Let's try new tweet
     if err and old_tweet_id:
-        logger.info(f"Failed to create reply tweet. Going to create new")
+        logger.debug(f"Failed to create reply tweet. Going to create new")
         err, new_tweet_id = twitter_tool.create_tweet(
             text,
             old_tweet_id=None
@@ -82,10 +84,24 @@ def send_message(pair: str, text: str) -> str | None:
     elif err:
         return None
 
-    logger.info(f"Created tweet with id: {new_tweet_id}")
+    logger.debug(f"Created tweet with id: {new_tweet_id}")
     return new_tweet_id
 
 
-def add_message():
-    ...
+def add_message(pair: str, tweet_id: str, text: str) -> str | None:
+    """
+    Add message to posts db
+    :param pair:
+    :param tweet_id:
+    :param text:
+    :return: object_id
+    """
+    posts_tool = PostsToolBox()
+    post = Post(pair=pair, tweet_id=tweet_id, text=text)
+    err, object_id = posts_tool.insert_post(post)
+    if err:
+        logger.debug(f"Failed to insert post: {post}")
+    else:
+        logger.debug(f"Inserted post id: {object_id}")
+        return object_id
 

@@ -1,12 +1,13 @@
 # For logging
 import logging
 #
-from pymongo.command_cursor import CommandCursor
+from pymongo.collection import InsertOneResult
 from pprint import pformat
 
 from core.config import settings
 from core.config import APP_NAME
 from db.session import db_session as db_session
+from models.post import Post
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
@@ -127,6 +128,17 @@ class PostsToolBox:
             logger.debug(err)
             return err, None
 
-
-
+    # Insert one document post to posts
+    def insert_post(self, post: Post) -> tuple[str | None, str | None]:
+        logger.debug(f"Going to execute insert_one with: {post}")
+        err = None
+        try:
+            coll = db_session.db[self.collection_name]
+            result: InsertOneResult = coll.insert_one(document=post.to_dict())
+            logger.debug(f"Inserted document id: {result.inserted_id}")
+            return None, result.inserted_id
+        except Exception as e:
+            err = f"Failed run command insert_one: {e}"
+            logger.debug(err)
+            return err, None
 

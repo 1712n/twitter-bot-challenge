@@ -2,6 +2,8 @@
 from core.log import logger
 # For sleep
 import time
+# Formatting
+from pprint import pformat
 
 # Logic
 from util.pairs import get_top_pairs
@@ -48,7 +50,7 @@ def main():
             logger.critical(f"Failed to compose a message text")
             continue
         steps += 1
-        logger.info(f"Text message composed")
+        logger.info(f"Text message_to_post composed: {pformat(message_to_post)}")
 
         # keep similar tweets in one thread. if pair_to_post tweets already exists in
         # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.
@@ -56,15 +58,16 @@ def main():
         if not tweet_id:
             logger.critical(f"Failed to send tweet")
         steps += 1
-        logger.info(f"Tweet created")
+        logger.info(f"Tweet created: {tweet_id}")
 
         # add your message_to_post to posts_db
-        result = add_message(
+        post_id = add_message(
             pair=pair_to_post,
             tweet_id=tweet_id,
             text=message_to_post,
         )
         steps += 1
+        logger.info(f"Post added: {post_id}")
 
     logger.info('The app finished')
 
