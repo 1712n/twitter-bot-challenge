@@ -16,7 +16,6 @@ from util.messages import send_message
 def main():
     logger.info('The app started')
 
-    # db = get_db()
     steps = 0
     sleep_time = 2
     while steps < 5:
@@ -29,7 +28,7 @@ def main():
             continue
         steps += 1
         logger.info(f"Got top pairs, qty: {len(top_pairs)}")
-        logger.debug(f"top_pairs: {top_pairs}")
+        logger.debug(f"Top pairs: {top_pairs}")
 
         # query posts_db for the latest documents corresponding to those 100 pairs
         # sort results by the oldest timestamp to find the pairs that
@@ -58,7 +57,7 @@ def main():
         if not tweet_id:
             logger.critical(f"Failed to send tweet")
         steps += 1
-        logger.info(f"Tweet created: {tweet_id}")
+        logger.info(f"Tweet created, id: {tweet_id}")
 
         # add your message_to_post to posts_db
         post_id = add_message(
@@ -67,7 +66,7 @@ def main():
             text=message_to_post,
         )
         steps += 1
-        logger.info(f"Post added: {post_id}")
+        logger.info(f"Post added, id: {post_id}")
 
     logger.info('The app finished')
 

@@ -19,14 +19,14 @@ class Message:
                 others -= float(item['percentage'])
             return others
         except Exception as e:
-            logger.warning("Failed to calculate Others")
+            logger.warning(f"Failed to calculate Others: {e}")
             return None
 
     def __init__(self, pair_to_post: str, data: list):
         others = self.calculate_others(data=data)
         body = ""
         for item in data:
-            body += f"{item['marketVenue']} {item['percentage']}%\n"
+            body += f"{item['marketVenue'].capitalize()} {item['percentage']}%\n"
         if others:
             body += f"Others {others:.2f}%"
         self.text = self.template + pair_to_post + ":\n" + body
