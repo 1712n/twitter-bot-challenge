@@ -24,3 +24,17 @@ message:
 twitter:
   # URL for POST request: create tweet
   tweets_url: "https://api.twitter.com/2/tweets"
+
+# Other settings
+global:
+  # Global cycle params
+  global_timeout: 600
+  # Retry count. -1 or 0: infinity
+  global_retry: 5
+  # Sleep interval
+  global_interval: 5
+  # Any inner cycle
+  # Retry count. -1 or 0: infinity
+  inner_retry: 3
+  # Sleep interval
+  inner_interval: 5

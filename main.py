@@ -1,10 +1,13 @@
 # Project logging
 from core.log import logger
+
 # For sleep
 import time
 # Formatting
 from pprint import pformat
 
+# Project settings
+from core.config import settings
 # Logic
 from util.pairs import get_top_pairs
 from util.posts import select_pair_to_post
@@ -13,62 +16,135 @@ from util.messages import compose_message_to_post
 from util.messages import send_message
 
 
-def main():
-    logger.info('The app started')
+# 1. Gather all data
+def get_data() -> tuple[str | None, str | None, str | None]:
+    POINTS = 3
+    err = None
+    # 1.1. Top pairs by compound volume
+    top_pairs = get_top_pairs()
+    if not top_pairs or not len(top_pairs):
+        err = f"Failed to get top pairs"
+        logger.info(err)
+        return err, None, None
+    logger.info(f"[1/{POINTS}] Got top pairs, qty: {len(top_pairs)}")
+    logger.debug(f"Top pairs: {top_pairs}")
 
-    steps = 0
-    sleep_time = 2
-    while steps < 5:
-        # query ohlcv_db for the top 100 pairs by compound volume
-        top_pairs = get_top_pairs()
-        if len(top_pairs) == 0:
-            logger.info(f"Query for top pairs failed. Sleeping for {sleep_time} ...")
-            time.sleep(sleep_time)
-            steps = 0
-            continue
-        steps += 1
-        logger.info(f"Got top pairs, qty: {len(top_pairs)}")
-        logger.debug(f"Top pairs: {top_pairs}")
+    # 1.2. pair_to_post
+    pair_to_post = select_pair_to_post(top_pairs)
+    if not pair_to_post or not len(pair_to_post):
+        err = f"Query and selection for pair_to_post failed"
+        logger.critical(err)
+        return err, None, None
+    logger.info(f"[2/{POINTS}] Selected pair_to_post: {pair_to_post}")
 
-        # query posts_db for the latest documents corresponding to those 100 pairs
-        # sort results by the oldest timestamp to find the pairs that
-        # haven't been posted for a while, then corresponding volume to find
-        # the biggest markets among them and select the pair_to_post
-        pair_to_post = select_pair_to_post(top_pairs)
-        if not pair_to_post:
-            logger.critical(f"Query and selection for pair_to_post failed")
-            steps = 0
-            continue
-        steps += 1
-        logger.info(f"Selected pair_to_post: {pair_to_post}")
+    # 1.3. compose message_to_post for the pair_to_post
+    message_to_post = compose_message_to_post(pair_to_post=pair_to_post)
+    if not message_to_post or not len(message_to_post):
+        err = f"Failed to compose a message_to_post"
+        logger.critical(err)
+        return err, None, None
+    logger.info(f"[3/{POINTS}] Text message_to_post composed: {pformat(message_to_post)}")
 
-        # compose message_to_post for the pair_to_post with corresponding
-        # latest volumes by market values from ohlcv_db
-        message_to_post = compose_message_to_post(pair_to_post=pair_to_post)
-        if not message_to_post:
-            logger.critical(f"Failed to compose a message text")
-            continue
-        steps += 1
-        logger.info(f"Text message_to_post composed: {pformat(message_to_post)}")
+    return None, pair_to_post, message_to_post
 
-        # keep similar tweets in one thread. if pair_to_post tweets already exists in
-        # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.
-        tweet_id = send_message(pair=pair_to_post, text=message_to_post)
-        if not tweet_id:
-            logger.critical(f"Failed to send tweet")
-        steps += 1
-        logger.info(f"Tweet created, id: {tweet_id}")
+# 2. Publish data
+def publish_data(
+        pair_to_post: str,
+        message_to_post: str,
+        retry: int = 2,
+        interval: int = 5,
+) -> tuple[str | None, str | None, str | None]:
+    POINTS = 2
+    err = None
 
-        # add your message_to_post to posts_db
+    # 2.1. Send message_to_post to Twitter
+    tweet_id = send_message(pair=pair_to_post, text=message_to_post)
+    if not tweet_id or not len(str(tweet_id)):
+        err = f"Failed to send tweet"
+        logger.critical(err)
+        return err, None, None
+    logger.info(f"[1/{POINTS}] Tweet created, id: {tweet_id}")
+
+    # 2.2. Put message_to_post to posts_db
+    # retry = float('Inf') if not retry or (retry < 0) else retry
+    i: int = 1
+    while i <= retry:
+        logger.info(f"Trying to add message to posts. Attempt: {i} of {retry}")
         post_id = add_message_to_posts(
             pair=pair_to_post,
             tweet_id=tweet_id,
             text=message_to_post,
         )
-        steps += 1
-        logger.info(f"Post added, id: {post_id}")
+        if not post_id or not len(str(post_id)):
+            err = f"Failed to add post"
+            logger.critical(err)
+        else:
+            logger.info(f"[2/{POINTS}] Post added, id: {post_id}")
+            return None, tweet_id, post_id
 
-    if steps < 5:
+        if interval > 0:
+            logger.info(f"Sleeping for {interval} sec")
+            time.sleep(interval)
+        if retry > 0:
+            i += 1
+
+    return err, None, None
+
+
+def main():
+    logger.info('The app started')
+
+    # global cycle params
+    global_timeout: int = settings.GLOBAL_TIMEOUT
+    global_retry: int = settings.GLOBAL_RETRY
+    global_interval: int = settings.GLOBAL_INTERVAL
+
+    # inner cycle params
+    i: int
+    inner_retry: int = settings.INNER_RETRY
+    inner_interval: int = settings.INNER_INTERVAL
+
+    global_cycle_counter: int = 1
+
+    # global cycle
+    while global_cycle_counter < global_retry:
+        # 1. Gather data
+        logger.info(f"[1__] Trying to get data. Attempt "
+                    f"{global_cycle_counter} of {global_retry}")
+        err, pair_to_post, message_to_post = get_data()
+        # 2. Data is OK. Publish data
+        if not err:
+            i = 1
+            while i <= inner_retry:
+                logger.info(f"[2__] Trying to publish data. Attempt "
+                            f"{i} of {inner_retry}")
+                err, tweet_id, post_id = publish_data(
+                    pair_to_post=pair_to_post,
+                    message_to_post=message_to_post,
+                    retry=inner_retry,
+                    interval=inner_interval,
+                )
+                # Failed to publish
+                if err:
+                    logger.critical(f"Failed to publish data: {err}")
+                else:
+                    break
+                if inner_retry > 0:
+                    i += 1
+                    logger.info(f"Sleeping for {inner_interval} sec")
+                    time.sleep(inner_interval)
+        else:   # Failed to get data
+            logger.critical(f"Failed to get data: {err}")
+
+        if not err:
+            break
+
+        if global_retry > 0:
+            global_cycle_counter += 1
+            logger.info(f"Sleeping for {global_interval} sec")
+            time.sleep(global_interval)
+
+    if not err:
         logger.info('The app finished successfully')
     else:
         logger.critical('The app finished with failure')

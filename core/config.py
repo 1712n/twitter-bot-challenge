@@ -96,6 +96,18 @@ class Settings:
 
             # Twitter
             self.TWEETS_URL = conf['twitter']['tweets_url'].get()
+
+            # Global app timeout
+            self.GLOBAL_TIMEOUT = conf['global']['global_timeout'].get()
+            # Retry count. -1 or 0: infinity
+            self.GLOBAL_RETRY = conf['global']['global_retry'].get()
+            # Sleep interval
+            self.GLOBAL_INTERVAL = conf['global']['global_interval'].get()
+            # Retry count. -1 or 0: infinity
+            self.INNER_RETRY = conf['global']['inner_retry'].get()
+            # Sleep interval
+            self.INNER_INTERVAL = conf['global']['inner_interval'].get()
+
         except Exception as e:
                 logger.critical(
                     f"Failed configure from file: {self.CONFIG_FILE}: {e}"
