@@ -167,5 +167,6 @@ cython_debug/
 # Some stuff
 .untracked_stuff/
 
-# Drawio backups
+# Drawio backups and tmp
 **/*.drawio.bkp
+**/*.drawio.dtmp
