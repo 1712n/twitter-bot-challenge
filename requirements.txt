@@ -11,4 +11,7 @@ confuse
 pyyaml
 
 # For testing
-# pytest
+pytest
+
+# For Twitter
+requests_oauthlib
