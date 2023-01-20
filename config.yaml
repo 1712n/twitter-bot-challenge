@@ -5,7 +5,7 @@ mongodb:
   # Collection name for pairs
   pairs: "ohlcv_db"
   # Limit for top pairs
-  pairs_top_limit: 10
+  pairs_top_limit: 100
   # Collection name for posts
   posts: "posts_db"
   # Timeout (in ms) for connection attempt to mongodb
