@@ -1,10 +1,13 @@
 import logging
+#
+from pymongo.command_cursor import CommandCursor
+#
+from pprint import pformat
 
 from core.config import settings
 from core.config import APP_NAME
 from db.session import db_session as db_session
 
-from pymongo.command_cursor import CommandCursor
 
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
@@ -160,6 +163,156 @@ class PairsToolBox:
             logger.critical(err)
             return err, None
 
+    # Get top pairs
+    def get_venues_by_pair(self, pair: str, limit: int = 5) \
+            -> tuple[str | None, list | None]:
+        """
+        Get venues market share for pair
+        :return:
+        """
+        # Preparing mongodb pipeline for db.collection.aggregate command
+        """
+        db.getCollection("ohlcv_db").aggregate(
+        [
+            { "$project": {
+              'pair': {
+                '$toUpper':  
+                    {'$concat': ['$pair_symbol', '-', '$pair_base']},
+                },
+              'marketVenue': '$marketVenue',
+              'volume': '$volume',
+              }
+            },
+          {'$match': {'pair': 'SHIB-USDT'}},
+          {
+            '$group': {
+              '_id': '$marketVenue', 
+              'venueVolume': {"$sum": {"$toDouble": "$volume"}},
+            }
+          }, {
+            '$group': {
+              '_id': null, 
+              'total': {
+                '$sum': '$venueVolume'
+              }, 
+              'data': {
+                '$push': '$$ROOT'
+              }
+            }
+          }, {
+            '$unwind': {
+              'path': '$data'
+            }
+          }, {
+            '$project': {
+              '_id': 0, 
+              'marketVenue': '$data._id', 
+              'share': '$data.venueVolume', 
+              'percentage': {
+                '$multiply': [
+                  100, {
+                    '$divide': [
+                      '$data.venueVolume', '$total'
+                    ]
+                  }
+                ]
+              }
+            }
+          },
+            {'$sort': {'percentage': -1}},
+          { '$limit': 5 },
+            {"$project": {
+                "marketVenue": "$marketVenue",
+                "percentage": {"$round": ["$percentage", 2]}
+            }}
+        ]
+        )
+        """
+        stage_project_make_pair: dict = {
+            "$project": {
+                "pair": {
+                    "$toUpper":
+                        {"$concat": ["$pair_symbol", "-", "$pair_base"]}
+                },
+                "marketVenue": "$marketVenue",
+                "volume": "$volume",
+                }
+            }
+        stage_match_pair: dict = {"$match": {"pair": pair}}
+        stage_group_venue_sum_venuevolume: dict = {
+            "$group": {
+                "_id": "$marketVenue",
+                "venueVolume": {"$sum": {"$toDouble": "$volume"}},
+            }
+          }
+        stage_group_total_venuevolume: dict = {
+            "$group": {
+                "_id": "null",
+                "total": {"$sum": "$venueVolume"},
+                "data": {"$push": "$$ROOT"}
+            }
+        }
+        stage_unwind: dict = {
+            "$unwind": {"path": "$data"}
+        }
+        stage_project_percentage: dict = {
+            "$project": {
+                "_id": 0,
+                "marketVenue": "$data._id",
+                "share": "$data.venueVolume",
+                "percentage": {
+                    "$multiply": [
+                        100,
+                        {"$divide": ["$data.venueVolume", "$total"]}
+                    ]
+                }
+            }
+        }
+        stage_sort_percentage: dict = {"$sort": {"percentage": -1}}
+        stage_limit: dict = {"$limit": limit}
+        stage_project_round: dict = {
+            "$project": {
+                "marketVenue": "$marketVenue",
+                "percentage": {"$round": ["$percentage", 2]}
+            }
+        }
+        pipeline: list = [
+            stage_project_make_pair,
+            stage_match_pair,
+            stage_group_venue_sum_venuevolume,
+            stage_group_total_venuevolume,
+            stage_unwind,
+            stage_project_percentage,
+            stage_sort_percentage,
+            stage_limit,
+            stage_project_round,
+        ]
+        # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
+        err = None
+        try:
+            coll = db_session.db[self.collection_name]
+            result = coll.aggregate(pipeline)
+        except Exception as e:
+            err = f"Failed to get venues market share for pair: {e}"
+            logger.critical(err)
+            return err, None
+        # Parsing data
+        try:
+            data = []
+            for elem in result:
+                logger.debug(f"row: {elem}")
+                market_pair = elem
+                data.append(market_pair)
+            if not len(data) and (len(data) > limit):
+                err = f"No data or too more data in the results"
+                logger.critical(err)
+            logger.debug(f"Going to return data: {data}")
+            return err, data
+        except Exception as e:
+            err = f"Failed to parse data: {e}"
+            logger.critical(err)
+            return err, None
 
 
 

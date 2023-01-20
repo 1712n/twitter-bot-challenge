@@ -5,11 +5,10 @@ import time
 
 # Logic
 from util.pairs import get_top_pairs
-#from util.posts import get_latest_posts
 from util.posts import select_pair
-from util.posts import add_message
-from util.twitter import compose_message
-from util.twitter import send_message
+from util.messages import add_message
+from util.messages import compose_message
+from util.messages import send_message
 
 
 def main():
@@ -44,7 +43,7 @@ def main():
         steps += 1
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
-        compose_message()
+        compose_message(pair_to_post=pair_to_post)
         steps += 1
         # keep similar tweets in one thread. if pair_to_post tweets already exists in
         # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.

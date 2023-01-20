@@ -87,6 +87,7 @@ class Settings:
             self.POSTS_NAME = conf['mongodb']['posts'].get()
             self.TOP_LIMIT = conf['mongodb']['pairs_top_limit'].get()
             self.MESSAGE_TEMPLATE = conf['message']['template'].get()
+            self.VENUES_LIMIT = conf['message']['venues_limit'].get()
 
             # Mongodb timeout serverSelectionTimeoutMS
             self.SERVERSELECTIONTIMEOUTMS: str = \

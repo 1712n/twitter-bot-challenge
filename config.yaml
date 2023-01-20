@@ -12,3 +12,4 @@ mongodb:
 
 message:
   template: "Top Market Venues for "
+  venues_limit: 5
