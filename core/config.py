@@ -42,6 +42,16 @@ class Settings:
             f"{self.MONGO_DB_ADDRESS}"
         )
 
+    @staticmethod
+    def check_not_less_zero(variable, default):
+        if not variable:
+            return default
+        try:
+            if int(variable) < 0:
+                return 0
+        except:
+            return default
+
     def __init__(self):
         # Check if environment variables exist
         try:
@@ -98,20 +108,35 @@ class Settings:
             self.TWEETS_URL = conf['twitter']['tweets_url'].get()
 
             # Global app timeout
-            self.GLOBAL_TIMEOUT = conf['global']['global_timeout'].get()
+            self.GLOBAL_TIMEOUT = self.check_not_less_zero(
+                conf['global']['global_timeout'].get(),
+                default=600
+            )
             # Retry count. -1 or 0: infinity
-            self.GLOBAL_RETRY = conf['global']['global_retry'].get()
+            self.GLOBAL_RETRY = self.check_not_less_zero(
+                conf['global']['global_retry'].get(),
+                default=3
+            )
             # Sleep interval
-            self.GLOBAL_INTERVAL = conf['global']['global_interval'].get()
+            self.GLOBAL_INTERVAL = self.check_not_less_zero(
+                conf['global']['global_interval'].get(),
+                default=5
+            )
             # Retry count. -1 or 0: infinity
-            self.INNER_RETRY = conf['global']['inner_retry'].get()
+            self.INNER_RETRY = self.check_not_less_zero(
+                conf['global']['inner_retry'].get(),
+                default=3
+            )
             # Sleep interval
-            self.INNER_INTERVAL = conf['global']['inner_interval'].get()
+            self.INNER_INTERVAL = self.check_not_less_zero(
+                conf['global']['inner_interval'].get(),
+                default=5
+            )
 
         except Exception as e:
-                logger.critical(
-                    f"Failed configure from file: {self.CONFIG_FILE}: {e}"
-                )
+            logger.critical(
+                f"Failed configure from file: {self.CONFIG_FILE}: {e}"
+            )
 
 
 settings = Settings()
