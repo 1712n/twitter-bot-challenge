@@ -29,11 +29,11 @@ class DatabaseConnection:
             self.db = self.client.get_database(settings.MONGODB_DBNAME)
             logger.debug(f"Mongodb db name set: {settings.MONGODB_DBNAME}")
         except ConnectionFailure:
-            text = "Mongodb server isn't available"
-            logger.critical(text)
+            err = "Mongodb server isn't available"
+            logger.critical(err)
             self.client.close()
             # If there's no connection, we will through an Exception
-            raise Exception(text)
+            raise Exception(err)
 
     # Check database connection to database
     def check_db_connection(self) -> bool:
@@ -51,4 +51,8 @@ class DatabaseConnection:
             return False
 
 
-db_session = DatabaseConnection()
+try:
+    db_session = DatabaseConnection()
+except Exception as e:
+    logger.critical(f"Failed to connect to mongodb: {e}")
+    db_session = None
