@@ -90,7 +90,7 @@ def send_message(pair: str, text: str) -> str | None:
 
 def add_message(pair: str, tweet_id: str, text: str) -> str | None:
     """
-    Add message to posts db
+    Add message to posts_db with pair tweet_id and text
     :param pair:
     :param tweet_id:
     :param text:

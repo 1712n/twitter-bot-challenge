@@ -2,6 +2,7 @@
 import logging
 #
 from pymongo.collection import InsertOneResult
+from pymongo.command_cursor import CommandCursor
 from pprint import pformat
 
 from core.config import settings

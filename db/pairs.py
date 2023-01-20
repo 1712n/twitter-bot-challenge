@@ -31,6 +31,7 @@ class PairsToolBox:
             stage_group,
         ]
         # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         err = None
         try:
             coll = db_session.db[self.collection_name]
@@ -74,6 +75,7 @@ class PairsToolBox:
         ]
         # pprint(pipeline)
         # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         err = None
         try:
             coll = db_session.db[self.collection_name]
@@ -137,6 +139,7 @@ class PairsToolBox:
             stage_project_2,
         ]
         # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         err = None
         try:
             coll = db_session.db[self.collection_name]
