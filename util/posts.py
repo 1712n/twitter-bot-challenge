@@ -8,7 +8,7 @@ from pprint import pprint
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
-def select_pair(top_pairs: list) -> str | None:
+def select_pair_to_post(top_pairs: list) -> str | None:
     posts_tool = PostsToolBox()
 
     err, oldest_post = posts_tool.get_oldest_pairs_post(top_pairs)

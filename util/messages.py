@@ -16,7 +16,7 @@ from models.post import Post
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
-def compose_message(pair_to_post: str) -> str | None:
+def compose_message_to_post(pair_to_post: str) -> str | None:
     pairs_tool = PairsToolBox()
 
     # Get venues shares for pair_to_post
@@ -88,7 +88,7 @@ def send_message(pair: str, text: str) -> str | None:
     return new_tweet_id
 
 
-def add_message(pair: str, tweet_id: str, text: str) -> str | None:
+def add_message_to_posts(pair: str, tweet_id: str, text: str) -> str | None:
     """
     Add message to posts_db with pair tweet_id and text
     :param pair:

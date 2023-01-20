@@ -7,9 +7,9 @@ from pprint import pformat
 
 # Logic
 from util.pairs import get_top_pairs
-from util.posts import select_pair
-from util.messages import add_message
-from util.messages import compose_message
+from util.posts import select_pair_to_post
+from util.messages import add_message_to_posts
+from util.messages import compose_message_to_post
 from util.messages import send_message
 
 
@@ -34,7 +34,7 @@ def main():
         # sort results by the oldest timestamp to find the pairs that
         # haven't been posted for a while, then corresponding volume to find
         # the biggest markets among them and select the pair_to_post
-        pair_to_post = select_pair(top_pairs)
+        pair_to_post = select_pair_to_post(top_pairs)
         if not pair_to_post:
             logger.critical(f"Query and selection for pair_to_post failed")
             steps = 0
@@ -44,7 +44,7 @@ def main():
 
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
-        message_to_post = compose_message(pair_to_post=pair_to_post)
+        message_to_post = compose_message_to_post(pair_to_post=pair_to_post)
         if not message_to_post:
             logger.critical(f"Failed to compose a message text")
             continue
@@ -60,7 +60,7 @@ def main():
         logger.info(f"Tweet created, id: {tweet_id}")
 
         # add your message_to_post to posts_db
-        post_id = add_message(
+        post_id = add_message_to_posts(
             pair=pair_to_post,
             tweet_id=tweet_id,
             text=message_to_post,
@@ -68,7 +68,10 @@ def main():
         steps += 1
         logger.info(f"Post added, id: {post_id}")
 
-    logger.info('The app finished')
+    if steps < 5:
+        logger.info('The app finished successfully')
+    else:
+        logger.critical('The app finished with failure')
 
 
 if __name__ == '__main__':
