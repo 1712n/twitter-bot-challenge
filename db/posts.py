@@ -85,5 +85,63 @@ class PostsToolBox:
             logger.debug(err)
             return err, None
 
+    def get_tweet_id_by_pair(self, pair: str) -> tuple[str | None, bool | None]:
+        """
+        Get tweet_id from posts by pair if tweet_id exists
+        :param pair:
+        :return:
+        """
+        """
+        [
+            {
+                "$match": {
+                    "$and": [
+                        {"pair": "LINK-USDT"},
+                        {"tweet_id": {"$exists": "true"}},
+                        {"tweet_id": {"$nin": [null, ""]}},
+                    ]
+                }
+            },
+            { "$sort": {"time": -1}},
+            { "$limit": 1},
+        ]
+        """
+        stage_match: dict = {
+            "$match": {
+                "$and": [
+                    {"pair": pair},
+                    {"tweet_id": {"$exists": "true"}},
+                    {"tweet_id": {"$nin": [None, ""]}},
+                ]
+            }
+        }
+        stage_sort: dict = {"$sort": {"time": -1}}
+        stage_limit: dict = {"$limit": 1}
+        pipeline: list = [
+            stage_match,
+            stage_sort,
+            stage_limit,
+        ]
+
+        # Executing mongodb db.collection.aggregate command
+        logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
+        err = None
+        try:
+            coll = db_session.db[self.collection_name]
+            result: CommandCursor = coll.aggregate(
+                pipeline=pipeline,
+                maxTimeMS=10000
+            )
+            elem = result.next()
+            logger.debug(f"Aggregate result: {elem}")
+            tweet_id = elem['tweet_id']
+            logger.debug(f"Returning tweet_id: {tweet_id}")
+            return err, elem['tweet_id']
+        except Exception as e:
+            err = f"Failed to get tweet_id: {e}"
+            logger.debug(err)
+            return err, None
+
+
 
 

@@ -49,10 +49,27 @@ def send_message(pair: str, text: str) -> str | None:
         return None
     logger.info(f"is pair: {pair} in posts: {post_present}")
 
+    # Find tweet_id in posts
+    err, tweet_id = posts_tool.get_tweet_id_by_pair(pair=pair)
+    new_thread: bool = True
+    if err:
+        logger.warning(f"Failed to check if tweet exists in posts")
+    else:
+        try:
+            int(tweet_id)
+            logger.debug(f"tweet_id is OK: {tweet_id}")
+            new_thread: bool = False
+        except:
+            logger.debug(f"tweet_id is not numeric: {tweet_id}")
+
     # Send message as s tweet
-    logger.debug(f"Going to send message as tweet")
-    twitter_tool = TwitterToolBox()
-    twitter_tool.create_tweet(text)
+    if new_thread:
+        logger.info(f"Going to send message as tweet in new thread")
+        twitter_tool = TwitterToolBox()
+        twitter_tool.create_tweet(text)
+    else:
+        logger.info(f"Going to send message as tweet in old thread")
+        ...
 
 
 def add_message():
