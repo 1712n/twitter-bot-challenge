@@ -24,13 +24,17 @@ class WorkFlowRecorder():
             print(f"{call_timestamp.isoformat()} ! ERROR\n")
 
         if len(splited_message) > 1:
-            print(f"{call_timestamp.isoformat()} \
-                    {delimiter}{splited_message[0]}")
+            print(
+                f"{call_timestamp.isoformat()}"
+                f"{delimiter}{splited_message[0]}"
+            )
             for i in range(1, len(splited_message)):
                 print(f"{indent}{splited_message[i]}")
         else:
-            print(f"{call_timestamp.isoformat()} \
-                    {delimiter}{splited_message[0]}\n")
+            print(
+                f"{call_timestamp.isoformat()}"
+                f"{delimiter}{splited_message[0]}\n"
+            )
 
     def handle_excepttion(self, exception: Exception = None) -> None:
         """Prints an exception in a convenient format."""
