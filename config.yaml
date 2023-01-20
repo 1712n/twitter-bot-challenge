@@ -6,6 +6,9 @@ mongodb:
   # Collection name for pairs
   pairs: "ohlcv_db"
   # Limit for top pairs
-  pairs_top_limit: 2
+  pairs_top_limit: 3
   # Collection name for posts
   posts: "posts_db"
+
+message:
+  template: "Top Market Venues for "
