@@ -170,63 +170,6 @@ class PairsToolBox:
         :return:
         """
         # Preparing mongodb pipeline for db.collection.aggregate command
-        """
-        db.getCollection("ohlcv_db").aggregate(
-        [
-            { "$project": {
-              'pair': {
-                '$toUpper':  
-                    {'$concat': ['$pair_symbol', '-', '$pair_base']},
-                },
-              'marketVenue': '$marketVenue',
-              'volume': '$volume',
-              }
-            },
-          {'$match': {'pair': 'SHIB-USDT'}},
-          {
-            '$group': {
-              '_id': '$marketVenue', 
-              'venueVolume': {"$sum": {"$toDouble": "$volume"}},
-            }
-          }, {
-            '$group': {
-              '_id': null, 
-              'total': {
-                '$sum': '$venueVolume'
-              }, 
-              'data': {
-                '$push': '$$ROOT'
-              }
-            }
-          }, {
-            '$unwind': {
-              'path': '$data'
-            }
-          }, {
-            '$project': {
-              '_id': 0, 
-              'marketVenue': '$data._id', 
-              'share': '$data.venueVolume', 
-              'percentage': {
-                '$multiply': [
-                  100, {
-                    '$divide': [
-                      '$data.venueVolume', '$total'
-                    ]
-                  }
-                ]
-              }
-            }
-          },
-            {'$sort': {'percentage': -1}},
-          { '$limit': 5 },
-            {"$project": {
-                "marketVenue": "$marketVenue",
-                "percentage": {"$round": ["$percentage", 2]}
-            }}
-        ]
-        )
-        """
         stage_project_make_pair: dict = {
             "$project": {
                 "pair": {
