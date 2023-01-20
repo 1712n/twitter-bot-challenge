@@ -9,7 +9,6 @@ from core.config import APP_NAME
 from db.session import db_session as db_session
 
 
-
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
