@@ -16,6 +16,7 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 class PostsToolBox:
     def __init__(self):
         self.collection_name = settings.POSTS_NAME
+        self.client_maxtimems = settings.CLIENT_MAXTIMEMS
 
     def get_oldest_pairs_post(self, pairs: list) -> tuple[str | None, dict | None]:
         """
@@ -52,7 +53,7 @@ class PostsToolBox:
             coll = db_session.db[self.collection_name]
             result: CommandCursor = coll.aggregate(
                 pipeline=pipeline,
-                maxTimeMS=10000
+                maxTimeMS=self.client_maxtimems
             )
             elem = result.next()
             logger.debug(f"aggregate result: {elem}")
@@ -72,7 +73,7 @@ class PostsToolBox:
             post_count = coll.count_documents(
                 filter=stage_filter,
                 limit=1,
-                maxTimeMS=10000
+                maxTimeMS=self.client_maxtimems
             )
             if int(post_count) == 0:
                 logger.debug(f"post count: {post_count}")
@@ -117,7 +118,7 @@ class PostsToolBox:
             coll = db_session.db[self.collection_name]
             result: CommandCursor = coll.aggregate(
                 pipeline=pipeline,
-                maxTimeMS=10000
+                maxTimeMS=self.client_maxtimems
             )
             elem = result.next()
             logger.debug(f"Aggregate result: {elem}")

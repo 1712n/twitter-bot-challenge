@@ -1,18 +1,26 @@
+# Mongodb settings
 mongodb:
-  # Timeout (in ms) for connection attempt to mongodb
-  serverselectiontimeoutms: 4000
-  # db name
+  # Database name
   dbname: "metrics"
   # Collection name for pairs
   pairs: "ohlcv_db"
   # Limit for top pairs
-  pairs_top_limit: 3
+  pairs_top_limit: 10
   # Collection name for posts
   posts: "posts_db"
+  # Timeout (in ms) for connection attempt to mongodb
+  serverselectiontimeoutms: 4000
+  # Timeout (in ms) for client aggregate command execution: maxTimeMS
+  client_maxtimems: 10000
 
+# Settings for message, post
 message:
+  # Template for message_to_post text
   template: "Top Market Venues for "
+  # Q-ty of venues in message_to_post text
   venues_limit: 5
 
+# Settings for Twitter
 twitter:
+  # URL for POST request: create tweet
   tweets_url: "https://api.twitter.com/2/tweets"

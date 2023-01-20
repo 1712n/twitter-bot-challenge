@@ -92,6 +92,7 @@ class Settings:
             # Mongodb timeout serverSelectionTimeoutMS
             self.SERVERSELECTIONTIMEOUTMS: str = \
                 conf['mongodb']['serverselectiontimeoutms'].get()
+            self.CLIENT_MAXTIMEMS: str = conf['mongodb']['client_maxtimems'].get()
 
             # Twitter
             self.TWEETS_URL = conf['twitter']['tweets_url'].get()

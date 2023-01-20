@@ -15,6 +15,7 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 class PairsToolBox:
     def __init__(self):
         self.collection_name = settings.PAIRS_NAME
+        self.client_maxtimems = settings.CLIENT_MAXTIMEMS
 
     def get_granularities(self) -> tuple[str | None, list | None]:
         """
@@ -80,7 +81,10 @@ class PairsToolBox:
         try:
             coll = db_session.db[self.collection_name]
             logger.debug("Running aggregate ...")
-            result: CommandCursor = coll.aggregate(pipeline)
+            result: CommandCursor = coll.aggregate(
+                pipeline=pipeline,
+                maxTimeMS=self.client_maxtimems,
+            )
         except Exception as e:
             err = f"Failed to get top granularity: {e}"
             logger.critical(err)
@@ -143,7 +147,10 @@ class PairsToolBox:
         err = None
         try:
             coll = db_session.db[self.collection_name]
-            result = coll.aggregate(pipeline)
+            result = coll.aggregate(
+                pipeline=pipeline,
+                maxTimeMS=self.client_maxtimems,
+            )
         except Exception as e:
             err = f"Failed to get granularities: {e}"
             logger.critical(err)
@@ -237,7 +244,10 @@ class PairsToolBox:
         err = None
         try:
             coll = db_session.db[self.collection_name]
-            result = coll.aggregate(pipeline)
+            result = coll.aggregate(
+                pipeline=pipeline,
+                maxTimeMS=self.client_maxtimems,
+            )
         except Exception as e:
             err = f"Failed to get venues market share for pair: {e}"
             logger.critical(err)
