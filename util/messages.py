@@ -49,6 +49,7 @@ def send_message(pair: str, text: str) -> str | None:
     logger.info(f"is pair: {pair} in posts: {post_present}")
 
     # Send message as s tweet
+    logger.debug(f"Settings: {settings.TW_BEARER_TOKEN}")
     ...
 
 

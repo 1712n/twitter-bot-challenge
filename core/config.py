@@ -92,6 +92,13 @@ class Settings:
             # Mongodb timeout serverSelectionTimeoutMS
             self.SERVERSELECTIONTIMEOUTMS: str = \
                 conf['mongodb']['serverselectiontimeoutms'].get()
+
+            attr_value = os.getenv("TW_BEARER_TOKEN")
+            if attr_value:
+                self.TW_BEARER_TOKEN = attr_value
+                logger.debug(f"Found env variable: {attr}")
+            else:
+                self.TW_BEARER_TOKEN = "not-found"
         except Exception as e:
                 logger.critical(
                     f"Failed configure from file: {self.CONFIG_FILE}: {e}"
