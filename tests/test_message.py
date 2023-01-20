@@ -16,7 +16,7 @@ def test_create_message():
 
     correct_text = f"{settings.MESSAGE_TEMPLATE}{pair_to_post}:\n" \
                    f"Binance 30.0%\n" \
-                   f"OKX 20.0%\n" \
+                   f"Okx 20.0%\n" \
                    f"Others 50.0%\n"
 
     assert msg.text == correct_text
