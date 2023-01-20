@@ -91,21 +91,6 @@ class PostsToolBox:
         :param pair:
         :return:
         """
-        """
-        [
-            {
-                "$match": {
-                    "$and": [
-                        {"pair": "LINK-USDT"},
-                        {"tweet_id": {"$exists": "true"}},
-                        {"tweet_id": {"$nin": [null, ""]}},
-                    ]
-                }
-            },
-            { "$sort": {"time": -1}},
-            { "$limit": 1},
-        ]
-        """
         stage_match: dict = {
             "$match": {
                 "$and": [
