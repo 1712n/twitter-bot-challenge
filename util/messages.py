@@ -63,13 +63,13 @@ def send_message(pair: str, text: str) -> str | None:
             logger.debug(f"tweet_id is not numeric: {tweet_id}")
 
     # Send message as s tweet
+    twitter_tool = TwitterToolBox()
     if new_thread:
         logger.info(f"Going to send message as tweet in new thread")
-        twitter_tool = TwitterToolBox()
-        twitter_tool.create_tweet(text)
+        twitter_tool.create_tweet(text, old_tweet_id=None)
     else:
         logger.info(f"Going to send message as tweet in old thread")
-        ...
+        twitter_tool.create_tweet(text, old_tweet_id=tweet_id)
 
 
 def add_message():
