@@ -9,6 +9,7 @@ from core.config import APP_NAME
 from models.message import Message
 from db.pairs import PairsToolBox
 from db.posts import PostsToolBox
+from twitter.tweets import TwitterToolBox
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
@@ -49,8 +50,9 @@ def send_message(pair: str, text: str) -> str | None:
     logger.info(f"is pair: {pair} in posts: {post_present}")
 
     # Send message as s tweet
-    logger.debug(f"Settings: {settings.TW_BEARER_TOKEN}")
-    ...
+    logger.debug(f"Going to send message as tweet")
+    twitter_tool = TwitterToolBox()
+    twitter_tool.create_tweet(text)
 
 
 def add_message():
