@@ -12,23 +12,35 @@ from db.pairs import PairsToolBox
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
-def compose_message(pair_to_post: str):
+def compose_message(pair_to_post: str) -> str | None:
     pairs_tool = PairsToolBox()
 
-    # Get
+    # Get venues shares for pair_to_post
     err, data = pairs_tool.get_venues_by_pair(
         pair=pair_to_post,
         limit=settings.VENUES_LIMIT,
     )
+    if err:
+        logger.critical(f"Failed to get venues shares: {err}")
+        return None
+
+    # Make message text
     try:
         msg = Message(pair_to_post=pair_to_post, data=data)
-        logger.debug(f"Message text: {msg.text}")
+        if msg:
+            logger.debug(f"Message text: {msg.text}")
+            return msg.text
+        else:
+            logger.critical(f"Failed to make text for the message")
+            return None
     except Exception as e:
-        logger.critical(f"Failed to make text for the message")
-    ...
+        logger.critical(f"Failed to make text for the message: {e}")
+        return None
 
 
 def send_message():
+    # Check if exist pair_to_post in posts
+    # Send message as s tweet
     ...
 
 

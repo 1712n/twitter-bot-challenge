@@ -26,6 +26,7 @@ def main():
             steps = 0
             continue
         steps += 1
+        logger.info(f"Got top pairs, qty: {len(top_pairs)}")
         logger.debug(f"top_pairs: {top_pairs}")
 
         # query posts_db for the latest documents corresponding to those 100 pairs
@@ -37,14 +38,19 @@ def main():
         # the biggest markets among them and select the pair_to_post
         pair_to_post = select_pair(top_pairs)
         if not pair_to_post:
-            logger.info(f"Query and selection for pair_to_post failed")
+            logger.critical(f"Query and selection for pair_to_post failed")
             steps = 0
             continue
         steps += 1
+        logger.info(f"Selected pair_to_post: {pair_to_post}")
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
-        compose_message(pair_to_post=pair_to_post)
+        msg_text = compose_message(pair_to_post=pair_to_post)
+        if not msg_text:
+            logger.critical(f"Failed to compose a message text")
+            continue
         steps += 1
+        logger.info(f"Text message composed")
         # keep similar tweets in one thread. if pair_to_post tweets already exists in
         # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.
         send_message()
