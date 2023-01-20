@@ -31,3 +31,20 @@ class WorkFlowRecorder():
         else:
             print(f"{call_timestamp.isoformat()} \
                     {delimiter}{splited_message[0]}\n")
+
+    def handle_excepttion(self, exception: Exception = None) -> None:
+        """Prints an exception in a convenient format."""
+
+        if not isinstance(exception, Exception):
+            return
+
+        call_timestamp = datetime.utcnow()
+        delimiter = " -> "
+        indent = len(datetime.utcnow().isoformat()) + len(delimiter)
+        message_title = "EXCEPTION OCCURRED"
+
+        print(
+            f"{call_timestamp}{delimiter}{message_title}\n"
+            f"{delimiter: >{indent}}Exception class: {type(exception)}\n"
+            f"{delimiter: >{indent}}Exception message: {str(exception)}\n"
+        )
