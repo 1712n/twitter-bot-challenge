@@ -59,15 +59,6 @@ def main():
         add_message()
         steps += 1
 
-
-    # try:
-    #     collections = [settings.PAIRS_NAME, settings.POSTS_NAME]
-    #     for coll in collections:
-    #         for content in db[coll].find().limit(4):
-    #             log.logger.debug(f"collection: {coll} object: {content}")
-    # except Exception as e:
-    #     log.logger.debug(f"list_databases... failed: {e}")
-
     logger.info('The app finished')
 
 
