@@ -50,26 +50,40 @@ def send_message(pair: str, text: str) -> str | None:
     logger.info(f"is pair: {pair} in posts: {post_present}")
 
     # Find tweet_id in posts
-    err, tweet_id = posts_tool.get_tweet_id_by_pair(pair=pair)
-    new_thread: bool = True
+    err, old_tweet_id = posts_tool.get_tweet_id_by_pair(pair=pair)
     if err:
         logger.warning(f"Failed to check if tweet exists in posts")
     else:
         try:
-            int(tweet_id)
-            logger.debug(f"tweet_id is OK: {tweet_id}")
-            new_thread: bool = False
+            int(old_tweet_id)
+            logger.debug(f"tweet_id is OK: {old_tweet_id}")
         except:
-            logger.debug(f"tweet_id is not numeric: {tweet_id}")
+            logger.debug(f"tweet_id is not numeric: {old_tweet_id}")
+            old_tweet_id = None  # Just to be sure
 
     # Send message as s tweet
     twitter_tool = TwitterToolBox()
-    if new_thread:
-        logger.info(f"Going to send message as tweet in new thread")
-        twitter_tool.create_tweet(text, old_tweet_id=None)
+    if old_tweet_id:
+        logger.info(f"Going to send message as reply tweet in old thread")
     else:
-        logger.info(f"Going to send message as tweet in old thread")
-        twitter_tool.create_tweet(text, old_tweet_id=tweet_id)
+        logger.info(f"Going to send message as new tweet as a new thread")
+    # Going to create tweet
+    err, new_tweet_id = twitter_tool.create_tweet(
+        text,
+        old_tweet_id=old_tweet_id
+    )
+    # If we were trying to create reply tweet. Let's try new tweet
+    if err and old_tweet_id:
+        logger.info(f"Failed to create reply tweet. Going to create new")
+        err, new_tweet_id = twitter_tool.create_tweet(
+            text,
+            old_tweet_id=None
+        )
+    elif err:
+        return None
+
+    logger.info(f"Created tweet with id: {new_tweet_id}")
+    return new_tweet_id
 
 
 def add_message():

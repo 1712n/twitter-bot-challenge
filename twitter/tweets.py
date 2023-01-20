@@ -4,7 +4,7 @@ import logging
 import json
 
 # Settings
-# from core.config import settings
+from core.config import settings
 from core.config import APP_NAME
 from twitter.session import tw_session
 
@@ -13,7 +13,7 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 class TwitterToolBox:
     def __init__(self):
-        self.tweets_url = "https://api.twitter.com/2/tweets"
+        self.tweets_url = settings.TWEETS_URL
 
     def create_tweet(self, text: str, old_tweet_id: str = None) \
             -> tuple[str | None, list | None]:
@@ -48,10 +48,11 @@ class TwitterToolBox:
             json_response = response.json()
             logger.debug(f"Received: {json.dumps(json_response, indent=2, sort_keys=True)}")
             new_tweet_id = json_response['data']['id']
-            logger.info(f"Created tweet with id: {new_tweet_id}")
+            logger.debug(f"Created tweet with id: {new_tweet_id}")
         except Exception as e:
             err = "Failed to parse response after POST request"
             logger.debug(err)
             return err, None
-        return new_tweet_id
+
+        return None, new_tweet_id
 

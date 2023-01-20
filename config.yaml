@@ -13,3 +13,6 @@ mongodb:
 message:
   template: "Top Market Venues for "
   venues_limit: 5
+
+twitter:
+  tweets_url: "https://api.twitter.com/2/tweets"
