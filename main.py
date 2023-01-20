@@ -68,7 +68,7 @@ def publish_data(
     # 2.2. Put message_to_post to posts_db
     # retry = float('Inf') if not retry or (retry < 0) else retry
     i: int = 1
-    while i <= retry:
+    while not retry or (i <= retry):
         logger.info(f"Trying to add message to posts. Attempt: {i} of {retry}")
         post_id = add_message_to_posts(
             pair=pair_to_post,
@@ -85,8 +85,7 @@ def publish_data(
         if interval > 0:
             logger.info(f"Sleeping for {interval} sec")
             time.sleep(interval)
-        if retry > 0:
-            i += 1
+        i += 1
 
     return err, None, None
 
@@ -104,10 +103,11 @@ def main():
     inner_retry: int = settings.INNER_RETRY
     inner_interval: int = settings.INNER_INTERVAL
 
+    err = True  # some value
     global_cycle_counter: int = 1
 
     # global cycle
-    while global_cycle_counter < global_retry:
+    while not global_retry or (global_cycle_counter < global_retry):
         # 1. Gather data
         logger.info(f"[1__] Trying to get data. Attempt "
                     f"{global_cycle_counter} of {global_retry}")
@@ -115,7 +115,7 @@ def main():
         # 2. Data is OK. Publish data
         if not err:
             i = 1
-            while i <= inner_retry:
+            while not inner_retry or (i <= inner_retry):
                 logger.info(f"[2__] Trying to publish data. Attempt "
                             f"{i} of {inner_retry}")
                 err, tweet_id, post_id = publish_data(
@@ -129,8 +129,8 @@ def main():
                     logger.critical(f"Failed to publish data: {err}")
                 else:
                     break
-                if inner_retry > 0:
-                    i += 1
+                i += 1
+                if inner_interval > 0:
                     logger.info(f"Sleeping for {inner_interval} sec")
                     time.sleep(inner_interval)
         else:   # Failed to get data
@@ -139,8 +139,8 @@ def main():
         if not err:
             break
 
-        if global_retry > 0:
-            global_cycle_counter += 1
+        global_cycle_counter += 1
+        if global_interval > 0:
             logger.info(f"Sleeping for {global_interval} sec")
             time.sleep(global_interval)
 
