@@ -30,9 +30,6 @@ def main():
         logger.debug(f"top_pairs: {top_pairs}")
 
         # query posts_db for the latest documents corresponding to those 100 pairs
-        # I don't need it??????
-        # get_latest_posts(top_pairs)
-        # steps += 1
         # sort results by the oldest timestamp to find the pairs that
         # haven't been posted for a while, then corresponding volume to find
         # the biggest markets among them and select the pair_to_post
@@ -43,20 +40,30 @@ def main():
             continue
         steps += 1
         logger.info(f"Selected pair_to_post: {pair_to_post}")
+
         # compose message_to_post for the pair_to_post with corresponding
         # latest volumes by market values from ohlcv_db
-        msg_text = compose_message(pair_to_post=pair_to_post)
-        if not msg_text:
+        message_to_post = compose_message(pair_to_post=pair_to_post)
+        if not message_to_post:
             logger.critical(f"Failed to compose a message text")
             continue
         steps += 1
         logger.info(f"Text message composed")
+
         # keep similar tweets in one thread. if pair_to_post tweets already exists in
         # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.
-        send_message(pair=pair_to_post, text=msg_text)
+        tweet_id = send_message(pair=pair_to_post, text=message_to_post)
+        if not tweet_id:
+            logger.critical(f"Failed to send tweet")
         steps += 1
+        logger.info(f"Tweet created")
+
         # add your message_to_post to posts_db
-        add_message()
+        result = add_message(
+            pair=pair_to_post,
+            tweet_id=tweet_id,
+            text=message_to_post,
+        )
         steps += 1
 
     logger.info('The app finished')
