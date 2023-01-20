@@ -8,6 +8,7 @@ from core.config import settings
 from core.config import APP_NAME
 from models.message import Message
 from db.pairs import PairsToolBox
+from db.posts import PostsToolBox
 
 logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
@@ -38,8 +39,15 @@ def compose_message(pair_to_post: str) -> str | None:
         return None
 
 
-def send_message():
+def send_message(pair: str, text: str) -> str | None:
+    posts_tool = PostsToolBox()
     # Check if exist pair_to_post in posts
+    err, post_present = posts_tool.is_pair_in_posts(pair)
+    if err:
+        logger.critical(f"Failed to check pair_to_post in posts")
+        return None
+    logger.info(f"is pair: {pair} in posts: {post_present}")
+
     # Send message as s tweet
     ...
 

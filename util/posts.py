@@ -28,3 +28,7 @@ def select_pair(top_pairs: list) -> str | None:
         return None
 
 
+def if_pair_in_posts(pair: str) -> bool | None:
+    posts_tool = PostsToolBox()
+
+    err, result = posts_tool.is_pair_in_posts(pair=pair)

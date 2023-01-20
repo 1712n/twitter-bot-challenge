@@ -43,6 +43,7 @@ class PostsToolBox:
             stage_limit,
         ]
         # Executing mongodb db.collection.aggregate command
+        # logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         logger.debug(f"Going to execute aggregate with pipeline: {pformat(pipeline)}")
         err = None
         try:
@@ -58,4 +59,31 @@ class PostsToolBox:
             err = f"Failed to get oldest post: {e}"
             logger.debug(err)
             return err, None
+
+    def is_pair_in_posts(self, pair: str) -> tuple[str | None, bool | None]:
+        # Executing mongodb command
+        stage_filter = {"pair": pair}
+        logger.debug(f"Going to execute find: {pformat(stage_filter)}")
+        err = None
+        try:
+            coll = db_session.db[self.collection_name]
+            post_count = coll.count_documents(
+                filter=stage_filter,
+                limit=1,
+                maxTimeMS=10000
+            )
+            if int(post_count) == 0:
+                logger.debug(f"post count: {post_count}")
+                return err, False
+            elif int(post_count) == 1:
+                return err, True
+            else:
+                err = f"Failed"
+                return err, None
+        except Exception as e:
+            err = f"Failed check presence"
+            logger.debug(err)
+            return err, None
+
+
 

@@ -53,7 +53,7 @@ def main():
         logger.info(f"Text message composed")
         # keep similar tweets in one thread. if pair_to_post tweets already exists in
         # posts_db, post tweet to the corresponding Twitter thread. else, post a new tweet.
-        send_message()
+        send_message(pair=pair_to_post, text=msg_text)
         steps += 1
         # add your message_to_post to posts_db
         add_message()
