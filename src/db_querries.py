@@ -11,6 +11,11 @@ def get_top_pairs(pairs_col: collection.Collection) -> TopPairsByVolume:
     pairs_total_vol_list = pairs_col.aggregate(
         [
             {
+                "$match": {
+                    "granularity": '1h'
+                }
+            },
+            {
                 "$group": {
                     "_id": {"$toUpper": {"$concat": ["$pair_symbol", "-", "$pair_base"]}},
                     "volume_sum": {"$sum": {"$toDouble": "$volume"}},
@@ -80,9 +85,10 @@ def get_posts_for_pairs(posts_col: collection.Collection, pairs_list: list) -> O
 def gather_pair_data(pairs_col: collection.Collection, symbol: str, base: str) -> PairMarketStats:
     pair_data = pairs_col.aggregate([
         {
-            '$match': {
+            "$match": {
                 'pair_symbol': symbol,
-                'pair_base': base
+                'pair_base': base,
+                "granularity": '1h'
             }
         }, {
             '$group': {
