@@ -16,6 +16,9 @@ from util.messages import compose_message_to_post
 from util.messages import send_message
 
 
+app_start = time.perf_counter()
+
+
 # 1. Gather all data
 def get_data() -> tuple[str | None, str | None, str | None]:
     POINTS = 3
@@ -139,15 +142,32 @@ def main():
         if not err:
             break
 
+        try:
+            run_time = time.perf_counter() - app_start
+            if (run_time > global_timeout) \
+                or (
+                    (global_interval > 0)
+                    and
+                    ((run_time + global_interval) > global_timeout)
+            ):
+                err = f"Global runtime timeout reached. Elapsed: {run_time:.1f}"
+        except:
+            pass
+
         global_cycle_counter += 1
         if global_interval > 0:
             logger.info(f"Sleeping for {global_interval} sec")
             time.sleep(global_interval)
 
+    app_end = time.perf_counter()
+    try:
+        elapsed = app_end - app_start
+    except:
+        elapsed = ""
     if not err:
-        logger.info('The app finished successfully')
+        logger.info(f"The app finished successfully. Elapsed: {elapsed:.1f}")
     else:
-        logger.critical('The app finished with failure')
+        logger.critical(f"The app finished with failure. Elapsed: {elapsed:.1f}")
 
 
 if __name__ == '__main__':

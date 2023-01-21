@@ -21,7 +21,14 @@ logger = logging.getLogger(f"{APP_NAME}.{__name__}")
 
 
 class Settings:
-    # Variables that defined by Customer/...
+    # Variables that defined by Task
+    MONGODB_USER: str
+    MONGODB_PASSWORD: str
+    MONGO_DB_ADDRESS: str
+    TW_ACCESS_TOKEN: str
+    TW_ACCESS_TOKEN_SECRET: str
+    TW_CONSUMER_KEY: str
+    TW_CONSUMER_KEY_SECRET: str
     __ATTRS = [
         "MONGODB_USER",
         "MONGODB_PASSWORD",
