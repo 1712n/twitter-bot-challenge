@@ -1,3 +1,5 @@
+# MarkedCupBoat
+
 It is an attempt to solve the problem: 
 MarketCapBot - Automate posting on Twitter
 
@@ -6,102 +8,60 @@ MarketCapBot - Automate posting on Twitter
 https://github.com/1712n/challenge/issues/86
 
 # Project structure
-```
-/core
-    config.py       - Settings 
-    log.py          - Logging
-/db                 
-    session.py      - mongodb connection
-/doc                - Here will be dragons
-/tests              - Here will be dragons
-
-.env                - Environment variables
-config.yaml         - Configuration not in environment
-loggin_config.yaml  - Configuration file for logging
-requirements.txt 
-```
-
-# Mongodb
-
-db name: `metrics`
-
-collection: ohlcv_db
-```json
-{
-  'timestamp': datetime.datetime(2023, 1, 15, 1, 0), 
-  'market_id': 'okx-ltc-usdt-f', 
-  'marketVenue': 'okx', 
-  'high': '87.14', 
-  'pair_symbol': 'ltc', 
-  '_id': ObjectId('63c35fc6387a9b4f31f4c10f'), 
-  'pair_base': 'usdt', 
-  'granularity': '1h', 
-  'open': '86.68', 
-  'close': '86.86', 
-  'low': '86.25', 
-  'volume': '8968'
-}
-
-{
-  'timestamp': datetime.datetime(2023, 1, 15, 1, 14), 
-  'market_id': 'okx-ltc-usdt-f', 
-  'marketVenue': 'okx', 
-  'high': '86.63', 
-  'pair_symbol': 'ltc', 
-  '_id': ObjectId('63c354c9387a9b4f31f4826f'), 
-  'pair_base': 'usdt', 
-  'granularity': '1m', 
-  'open': '86.51', 
-  'close': '86.63', 
-  'low': '86.51', 
-  'volume': '90'}
-
 
 ```
-
-collection: posts_db
-```json
-{
-  '_id': ObjectId('639532ca0d693dfae1b8b0a7'), 
-  'time': datetime.datetime(2022, 12, 13, 12, 21), 
-  'tweet_text': 'Top Market Venues for LINK-USDT:\nBinance: 66.64%\nHitbtc: 11.25%\nOkx: 9.6%\nHuobi: 2.82%\nKucoin: 2.8%\nOthers: 6.89%', 
-  'pair': 'LINK-USDT'
-}
-
-{
-  '_id': ObjectId('639532ca0d693dfae1b8b0a9'), 
-  'time': datetime.datetime(2022, 12, 13, 0, 58), 
-  'tweet_text': 'Top Market Venues for BTC-USD:\nCoinbase: 68.98%\nBitstamp: 9.33%\nCrypto-com: 7.66%\nBinance-us: 5.28%\nKraken: 3.07%\nOthers: 5.68%', 
-  'pair': 'BTC-USD'
-}
-
+Project
+|-- core/
+|   |-- config.py         - Global Settings for project
+|   |-- log.py            - Logging
+|-- db/                   
+|   |-- pairs.py          - Low level working with pairs
+|   |-- posts.py          - Low level working with posts
+|   |-- session.py        - mongodb connection session
+|-- doc/                  - Docs will be
+|-- models/               - Models
+|   |-- message.py        - model for message_to_post
+|   |-- post.py           - model for post
+|-- tests/                - pytest
+|   |-- conftest.py       
+|   |-- test_message.py   - test for message
+|-- twitter/              
+|   |-- session.py        - Twitter connection
+|   |-- tweets.py         - Low level working with tweets
+|-- util/
+|   |-- messages.py       - Working with messages
+|   |-- pairs.py          - Working with pairs
+|   |-- posts.py          - Working with posts
+|
+|.env                     - This file used, if no env vars provided.
+|config.yaml              - Global configuration file. Used in core.config
+|loggin_config.yaml       - Configuration file for logging. Used in core.log
+|
+|main.py                  - High level application logic is here.
+|README.md
+|requirements.txt 
 ```
 
-# Completed
+# Algorithm
 
-- It has logging.
-- It can query mongodb.
-- It's able to get something.
-- Github actions tested.
-- Testing environment
-  - [v] Multiple .env files and symlink for .env
+## main.py
 
-# Last problem
+Algorithm was divided on two general parts:
 
-- Do I need a class for db?
-- I need nested aggregates in mongodb. Like select from select.
-- Or I need a join with itself (ohlcv join ohlcv).
+- Get data: `get_data()`
+  - Get top pairs: 
+  - Select pair_to_post: `select_pair_to_post()`
+  - Compose message_to_post: `compose_message_to_post()`
+- Publish data: `publish_data()`
+  - Send message to Twitter: `send_message()`
+  - Add message_to_post to posts: `add_message_to_posts()`
 
-# TODO
+# Configuration
 
-# Problems
+Project configuration stored in config.yaml
+Logging configuration stored in logging_config.yaml.
+If no environmental variables provided, then db.core.Settings will try to read .env file.
 
-- Tests?
-  - pytest...
-- Should I have a separate module/class for mongodb?
-  - OK
-- Should I check connection and wait in cycle?
-  - Ok
-- Correct way to check mongodb connection?
-- Correct way to check mongodb db/collection read availability?
-- Correct way to check mongodb db/collection write availability
+# Scheme
+
+![Business_Logic.jpg](doc/Business_Logic.jpg)
