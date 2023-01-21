@@ -16,10 +16,15 @@ def compose_message(pair, compound_volume, markets):
         if i >= 5:
             others_percent += percent
         else:
-            message += f"\n{sorted_markets[i].upper()}: {round(percent, 2)}%"
+            if percent >= 0.01:
+                message += f"\n{sorted_markets[i].upper()}: {round(percent, 2)}%"
+            else if percent > 0:
+                message += f"\n{sorted_markets[i].upper()}: < 0.01%"
 
-    if others_percent > 0:
+    if others_percent >= 0.01:
         message += f"\nOthers: {round(others_percent, 2)}%"
+    elif others_percent > 0:
+        message += f"\nOthers: < 0.01%"
 
     return message
 
