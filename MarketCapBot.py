@@ -3,19 +3,24 @@ from PairToPost import PairToPost
 import copy
 from WorkFlowRecorder import WorkFlowRecorder
 
+
 class MarketCapBot():
     """Performs all required actions with Twitter API"""
-    def __init__(self, consumer_key: str, consumer_secret: str, access_token: str, access_token_secret: str, recorder: WorkFlowRecorder) -> None:
-        """"""
+    def __init__(self, consumer_key: str, consumer_secret: str,
+                 access_token: str, access_token_secret: str,
+                 recorder: WorkFlowRecorder) -> None:
         recorder.get_logged("Initialize connection to Twitter API")
 
-        self.client = tweepy.Client(consumer_key=consumer_key, consumer_secret=consumer_secret,
-            access_token=access_token, access_token_secret=access_token_secret)
+        self.client = tweepy.Client(
+            consumer_key=consumer_key,
+            consumer_secret=consumer_secret,
+            access_token=access_token,
+            access_token_secret=access_token_secret)
         self.pair_document = None
         self.message_body = ""
         self.response = None
         self.published_post = None
-        self.pair_to_post_id  = None
+        self.pair_to_post_id = None
         self.recorder = recorder
 
     def set_pair_to_post(self, pair_to_post: PairToPost) -> None:
@@ -26,7 +31,9 @@ class MarketCapBot():
             self.pair_document = copy.deepcopy(pair_to_post.pair_document)
             self.pair_to_post_id = id(pair_to_post)
         else:
-            self.recorder.get_logged(error_flag=True, message="passed argument is not an instance of PairToPost")
+            self.recorder.get_logged(
+                error_flag=True,
+                message="passed argument is not an instance of PairToPost")
 
         self.recorder.get_logged("method set_pair_to_post has finished")
 
@@ -34,23 +41,40 @@ class MarketCapBot():
         """Composes a message body for a tweet"""
         self.recorder.get_logged("method compose_message_to_post has started")
 
-        title = f"Top Market Venues for {self.pair_document['pair_symbol'].upper()}-{self.pair_document['pair_base'].upper()}:\n"
-        top_5_markets =""
+        title = (
+            f"Top Market Venues for "
+            f"{self.pair_document['pair_symbol'].upper()}-"
+            f"{self.pair_document['pair_base'].upper()}:\n"
+        )
+        top_5_markets = ""
         other_markets_percent = 0
 
         if len(self.pair_document["markets"]) >= 5:
             for i in range(5):
-                top_5_markets += f"{self.pair_document['markets'][i]['marketVenue'].capitalize()} {self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
+                top_5_markets += (
+                    f"{self.pair_document['markets'][i]['marketVenue'].capitalize()} "
+                    f"{self.pair_document['markets'][i]['market_comp_vol_percent']}%\n"
+                )
             for i in range(5, len(self.pair_document["markets"])):
-                other_markets_percent += self.pair_document["markets"][i]["market_comp_vol_percent"]
+                other_markets_percent += (
+                    self.pair_document["markets"][i]["market_comp_vol_percent"]
+                )
         else:
             for market in self.pair_document['markets']:
-                top_5_markets += f"{market['marketVenue']} {market['market_comp_percent']}%\n"
+                top_5_markets += (
+                    f"{market['marketVenue'].capitalize()} "
+                    f"{market['market_comp_percent']}%\n"
+                )
+        self.message_body = (
+            title
+            + top_5_markets
+            + f"Others {other_markets_percent:.2f}%\n"
+        )
 
-        self.message_body = title + top_5_markets + f"Others {other_markets_percent:.2f}%\n"
-
-        self.recorder.get_logged("message_to_post content:\n" + f"{self.message_body}")
-        self.recorder.get_logged("method compose_message_to_post has finished")
+        self.recorder.get_logged("message_to_post content:\n"
+                                + f"{self.message_body}")
+        self.recorder.get_logged(
+            "method compose_message_to_post has finished")
 
     def create_tweet(self) -> dict:
         """
@@ -58,8 +82,9 @@ class MarketCapBot():
         Returns dict consists of new post's related information.
         """
         self.recorder.get_logged("method create_tweet has started")
-        # if no posts were found during aggregaion then we create the first tweet for the pair
-        # backlog: add error handling
+
+        # if no posts were found during aggregaion then
+        # we create the first tweet for the pair
         if len(self.pair_document["latest_post"]) == 0:
             self.recorder.get_logged("pair doesn't have latest_post. submitting new tweet ...")
             self.response = self.client.create_tweet(text=self.message_body, user_auth=True)
@@ -102,7 +127,7 @@ class MarketCapBot():
                 self.recorder.get_logged(f"found tweet_to_reply. submitting new tweet to thread {tweet_to_reply} ...")
                 self.response = self.client.create_tweet(text=self.message_body, in_reply_to_tweet_id=tweet_to_reply, user_auth=True)
 
-        self.recorder.get_logged("New tweet has beeb published.\n" + f"tweet_id: {self.response.data['id']}")
+        self.recorder.get_logged("New tweet has been published.\n" + f"tweet_id: {self.response.data['id']}")
 
         # retreive new post related data to put the ones in a returned dict
         self.published_post = self.client.get_tweet(self.response.data["id"], user_auth=True,
