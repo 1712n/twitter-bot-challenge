@@ -30,13 +30,14 @@ class WorkFlowRecorder():
             )
             for i in range(1, len(splited_message)):
                 print(f"{indent}{splited_message[i]}")
+            print()
         else:
             print(
                 f"{call_timestamp.isoformat()}"
                 f"{delimiter}{splited_message[0]}\n"
             )
 
-    def handle_excepttion(self, exception: Exception = None) -> None:
+    def log_exception(self, exception: Exception = None) -> None:
         """Prints an exception in a convenient format."""
 
         if not isinstance(exception, Exception):
