@@ -3,32 +3,51 @@ from pymongo.results import InsertOneResult
 from bson import ObjectId
 import datetime
 from WorkFlowRecorder import WorkFlowRecorder
+from exception_handling import handle_mongo_exception
+
 
 class PairToPost():
     """
     Represents a pair to post and performs required mongodb operations
     """
-    def __init__(self, user: str, password: str, address: str, recorder: WorkFlowRecorder) -> None:
-        recorder.get_logged("Initialize connection to Mongo")
-        self.client = MongoClient(f"mongodb+srv://{user}:{password}@{address}")
+    @handle_mongo_exception
+    def __init__(
+            self, user: str,
+            password: str,
+            address: str,
+            recorder: WorkFlowRecorder
+        ) -> None:
+
+        self.recorder = recorder
+        self.recorder.get_logged("Initialize connection to Mongo")
+
+        self.client = MongoClient(
+            f"mongodb+srv://"
+            f"{user}:{password}@{address}"
+        )
+        self.client.admin.command("ping")
         self.db = self.client['metrics']
         self.col_ohlcv = self.db['ohlcv_db']
         self.col_posts = self.db['posts_db']
+
         self.pair_document = {}
         self.last_inserted_id = None
-        self.recorder = recorder
 
-    def get_pair_to_post(self, days_amount: int=1, top_selection_limit: int=100) -> None:
+    @handle_mongo_exception
+    def get_pair_to_post(
+            self, days_amount: int = 1,
+            top_selection_limit: int = 100
+        ) -> None:
         """
         This method performs an aggregation pipeline to get the pair_to_post
         data which is stored as a dict in pair_document property of a class instance.
 
         Parameters:
 
-        days_amount - 1st pos. arg. - number of days to limit an initial
+        `days_amount` - 1st pos. arg. - number of days to limit an initial
         dataset. 1 by default.
 
-        top_selection_limit - 2nd  pos. arg. - amount of unique pairs
+        `top_selection_limit` - 2nd  pos. arg. - amount of unique pairs
         sorted by desc order to get top n pairs.
         """
         self.recorder.get_logged("method get_pair_to_post has started")
@@ -258,6 +277,7 @@ class PairToPost():
 
         self.recorder.get_logged("method get_pair_to_post has finished")
 
+    @handle_mongo_exception
     def add_post_to_collection(self, new_post_data: dict) -> bool:
         """
         Add a record into posts_db with info about a recently published tweet.
@@ -269,7 +289,9 @@ class PairToPost():
         self.recorder.get_logged("method add_post_to_collection has started")
 
         if new_post_data["pair_to_post_id"] != id(self):
-            self.recorder.get_logged(error_flag=True, message="pair_to_post_id doesn't match")
+            self.recorder.get_logged(
+                error_flag=True, message="pair_to_post_id doesn't match"
+            )
             return
 
         insert_result = self.col_posts.insert_one({
@@ -280,15 +302,11 @@ class PairToPost():
         })
         self.last_inserted_id = insert_result.inserted_id
 
-        self.recorder.get_logged(f"inserted_id: {self.last_inserted_id}")
-        self.recorder.get_logged("method add_post_to_collection has finished")
-        return isinstance(insert_result, InsertOneResult) and isinstance(insert_result.inserted_id, ObjectId)
-
-    def check_new_ohlcv_documents(self, pair_base: str, pair_symbol: str, latest_post_datetime: "datetime") -> bool:
-        """It's an auxiliary method. Checks if there is at least one new ohlcv documents for a pair since latest_post_datetime"""
-        result = self.col_ohlcv.find_one({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
-        return True if result != None else False
-
-    def count_new_ohlcv_documents(self, pair_base: str, pair_symbol: str, latest_post_datetime: "datetime") -> int:
-        """It's an auxiliary method. Returns a count of new ohlcv documents for a pair since latest_post_datetime"""
-        return self.col_ohlcv.count_documents({"pair_base": pair_base, "pair_symbol": pair_symbol, "timestamp": {"$gt": latest_post_datetime}})
+        self.recorder.get_logged(
+            f"inserted_id: {self.last_inserted_id}"
+        )
+        self.recorder.get_logged(
+            "method add_post_to_collection has finished"
+        )
+        return (isinstance(insert_result, InsertOneResult)
+                and isinstance(insert_result.inserted_id, ObjectId))
